@@ -132,7 +132,7 @@
   .selo.ATENDIMENTO { background: #E6EEF7; color: #24507A; }
 
   /* Atendimentos (etapa anterior a ficha), fila pelo PIX e funil */
-  .modo-atend [data-campo="corretor"] .rot-txt::after { content: ' *'; color: var(--marca); }
+  .modo-atend [data-campo="corretor"] .rot-txt::after, .modo-atend [data-campo="gerente"] .rot-txt::after { content: ' *'; color: var(--marca); }
   .t-fila td.num { font-variant-numeric: tabular-nums; color: var(--suave); white-space: nowrap; }
   .t-fila tr.sem-pix td { color: var(--suave); }
   .t-fila .in-ordem { width: 72px; text-align: center; border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; background: var(--branco); font-variant-numeric: tabular-nums; }
@@ -393,18 +393,19 @@
       <h1>Atendimentos</h1>
       <p class="sub" id="sub-clientes"></p>
       <div class="barra">
-        <input class="busca" id="busca-cli" type="search" placeholder="Buscar por cliente, celular, CPF ou corretor" aria-label="Buscar atendimentos">
+        <input class="busca" id="busca-cli" type="search" placeholder="Buscar por cliente, celular, CPF, corretor ou gerente" aria-label="Buscar atendimentos">
         <select id="ordenar-cli" class="seletor" aria-label="Ordenar os atendimentos">
           <option value="recentes">Mais recentes primeiro</option>
           <option value="temp">Pela temperatura (mais quentes)</option>
           <option value="corretor">Por corretor</option>
+          <option value="gerente">Por gerente ou sócio</option>
         </select>
         <button type="button" class="bt pri" id="bt-novo-atend">Novo atendimento</button>
       </div>
       <div class="cartao">
         <div class="tabela-rolo">
           <table>
-            <thead><tr><th>Registro</th><th>Cliente</th><th>Corretor</th><th>Interesse</th><th>Contatos</th><th>Temperatura</th><th></th></tr></thead>
+            <thead><tr><th>Registro</th><th>Cliente</th><th>Corretor</th><th>Atendeu</th><th>Interesse</th><th>Contatos</th><th>Temperatura</th><th></th></tr></thead>
             <tbody id="linhas-cli"></tbody>
           </table>
         </div>
@@ -571,10 +572,10 @@
     fInd: {}, diaAtend: '', filaSel: null, cfgDias: [], corretores: {}, reuEdit: null, aba: 'nova',
     modo: 'FICHA', converter: false, qCli: '', ordemCli: 'recentes' };
   var LARGOS = { nome: 1, nomeC: 1, endereco: 1, enderecoC: 1, email: 1, emailC: 1, corretor: 1, corretor2: 1, imobiliaria: 1, imobiliaria2: 1, pixCorretor: 1, pixCorretor2: 1 };
-  var TOTAIS = { pagamento: 1 };
+  var TOTAIS = { pagamento: 1, gerente: 1 };
   var NOME_STATUS = { 'EM ATENDIMENTO': 'Em atendimento', PENDENTE: 'Pendente', APROVADA: 'Aprovada', DEVOLVIDA: 'Devolvida' };
   var SUB_FICHA = 'Digite os dados da ficha em papel. Campos com <span class="req">*</span> são obrigatórios.';
-  var SUB_ATEND = 'Cadastro rápido do cliente que está sendo atendido. Só nome e corretor são obrigatórios; o resto pode entrar depois, quando virar ficha.';
+  var SUB_ATEND = 'Cadastro rápido do cliente que está sendo atendido. Só nome, corretor e quem atendeu pela Zabaleta são obrigatórios; o resto pode entrar depois, quando virar ficha.';
   /* Registro em atendimento = etapa anterior a ficha de interesse. */
   function ehAtend(f) { return f.status === 'EM ATENDIMENTO'; }
   function fichasReais() { return S.fichas.filter(function (f) { return !ehAtend(f); }); }
@@ -756,12 +757,12 @@
   function campo(id) { return S.campos.filter(function (c) { return c.id === id; })[0]; }
   function caixa(id) { return document.querySelector('[data-campo="' + id + '"]'); }
   function opcoesDe(c) { return c.tipo === 'simnao' ? ['SIM', 'NÃO'] : (c.opcoes || S.listas[c.lista] || []); }
-  /* Botoes de um clique para listas curtas: ate 4 opcoes, ou ate 10 quando os textos sao bem curtos (ex.: tamanhos de apto). */
+  /* Botoes de um clique para listas curtas: ate 4 opcoes, ou ate 10 quando os textos sao curtos (ex.: tamanhos de apto, gerentes). */
   function ehChips(c) {
     if (c.tipo === 'simnao') return true;
     if (c.tipo !== 'lista') return false;
     var ops = opcoesDe(c);
-    return ops.length <= 4 || (ops.length <= 10 && ops.join('').length <= 40);
+    return ops.length <= 4 || (ops.length <= 10 && ops.join('').length <= 48);
   }
   function rotuloOpcao(v) { return ROTULOS[v] || v; }
   function chipHtml(c, valor) {
@@ -1257,7 +1258,7 @@
       if (c.oculto) return;
       var v = dados[c.id];
       var msg = '';
-      var obrig = atend ? (c.id === 'nome' || c.id === 'corretor') : c.obrig;
+      var obrig = atend ? (c.id === 'nome' || c.id === 'corretor' || c.id === 'gerente') : c.obrig;
       if (obrig && !v) msg = (c.id === 'nome' && !nomeManual) ? 'Informe o ' + (pj ? 'CNPJ' : 'CPF') + ' para buscar ou marque "Digitar manualmente"' : 'Obrigatório';
       else if (c.tipo === 'cpf' && v && !cpfValido(v)) msg = 'CPF inválido';
       else if (c.tipo === 'cnpj' && v && !cnpjValido(v)) msg = 'CNPJ inválido';
@@ -1600,6 +1601,7 @@
     { id: 'primeiraCompra', titulo: 'Primeira compra' },
     { id: 'imobiliaria', titulo: 'Imobiliária', multi: ['imobiliaria', 'imobiliaria2'], top: 10 },
     { id: 'corretor', titulo: 'Corretor', multi: ['corretor', 'corretor2'], top: 10 },
+    { id: 'gerente', titulo: 'Gerente ou sócio que atendeu' },
     { id: 'pix', titulo: 'PIX registrado', ops: SIMNAO, val: function (f) { return f.diaPix ? 'SIM' : 'NÃO'; } },
     { id: 'confirmou', titulo: 'Cliente confirmou os dados', ops: SIMNAO, val: function (f) { return f.clienteConfirmou === 'SIM' ? 'SIM' : 'NÃO'; } },
     { id: 'atendimento', titulo: 'Atendimento marcado', ops: SIMNAO, val: function (f) { return f.diaAtend ? 'SIM' : 'NÃO'; } },
@@ -1693,6 +1695,7 @@
           (vs.length ? nota(media(vs)) + ' · ' + vs.length + (vs.length === 1 ? ' ficha' : ' fichas') : 'sem registros') + '</span></div>' +
           '<div class="trilho"><i style="width:' + (media(vs) / 5 * 100) + '%"></i></div></div>';
       }).join('') + '</div></div>' +
+      cartaoFunil('Atendimentos por gerente ou sócio', ['gerente']) +
       cartaoFunil('Atendimentos por corretor', ['corretor', 'corretor2']) + cartaoFunil('Atendimentos por imobiliária', ['imobiliaria', 'imobiliaria2']);
   }
   /* Funil: atendimentos que viraram ficha. Nao entra no filtro cruzado (mostra sempre o total). */
@@ -1830,13 +1833,13 @@
     var qd = q.replace(/\D/g, '');
     var lista = todos.filter(function (f) {
       if (!q) return true;
-      var texto = semAcento([f.id, f.nome, f.nomeC, f.email, f.corretor, f.corretor2, f.imobiliaria, f.imobiliaria2, f.cpf, f.cnpj, f.celular].join(' '));
+      var texto = semAcento([f.id, f.nome, f.nomeC, f.email, f.corretor, f.corretor2, f.imobiliaria, f.imobiliaria2, f.gerente, f.cpf, f.cnpj, f.celular].join(' '));
       if (texto.indexOf(q) >= 0) return true;
       return qd.length >= 3 && (f.cpf + f.cnpj + f.celular).replace(/\D/g, '').indexOf(qd) >= 0;
     });
     var recentes = function (a, b) { return a.id < b.id ? 1 : -1; };
     if (S.ordemCli === 'temp') lista.sort(function (a, b) { return (+tempAtual(b) || 0) - (+tempAtual(a) || 0) || recentes(a, b); });
-    else if (S.ordemCli === 'corretor') lista.sort(function (a, b) { return a.corretor < b.corretor ? -1 : (a.corretor > b.corretor ? 1 : recentes(a, b)); });
+    else if (S.ordemCli === 'corretor' || S.ordemCli === 'gerente') lista.sort(function (a, b) { var k = S.ordemCli; return a[k] < b[k] ? -1 : (a[k] > b[k] ? 1 : recentes(a, b)); });
     else lista.sort(recentes);
     var viraram = fichasReais().filter(function (f) { return f.viraFichaEm; }).length;
     var jaViraram = viraram ? ' ' + viraram + (viraram === 1 ? ' atendimento já virou ficha.' : ' atendimentos já viraram ficha.') : '';
@@ -1852,6 +1855,7 @@
         '<td class="id">' + esc(f.id) + '<span class="menor">desde ' + esc(reus.length ? reus[0].dia : (f.digitadoEm || '').slice(0, 10)) + '</span></td>' +
         '<td>' + esc(f.nome) + '<span class="menor">' + esc(f.celular || f.cpf || f.cnpj) + '</span></td>' +
         '<td>' + corretor + '<span class="menor">' + esc(f.imobiliaria) + '</span></td>' +
+        '<td>' + esc(f.gerente || '—') + '</td>' +
         '<td>' + esc(interesse || '—') + '<span class="menor">' + esc(f.pagamento) + '</span></td>' +
         '<td>' + reus.length + (reus.length === 1 ? ' contato' : ' contatos') + (ultimo ? '<span class="menor">último em ' + esc(ultimo.dia) + '</span>' : '') + '</td>' +
         '<td>' + (seloTemp(tempAtual(f)) || '—') + '</td>' +
