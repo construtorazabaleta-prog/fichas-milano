@@ -762,7 +762,7 @@
     if (c.tipo === 'simnao') return true;
     if (c.tipo !== 'lista') return false;
     var ops = opcoesDe(c);
-    return ops.length <= 4 || (ops.length <= 10 && ops.join('').length <= 48);
+    return ops.length <= 4 || (ops.length <= 10 && ops.join('').length <= 60);
   }
   function rotuloOpcao(v) { return ROTULOS[v] || v; }
   function chipHtml(c, valor) {
