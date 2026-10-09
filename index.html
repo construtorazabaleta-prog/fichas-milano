@@ -901,6 +901,11 @@
         marcarErro(b.doc, d && !docValido(b, d) ? b.tipoDoc + ' inválido' : '');
         tentarBusca(b);
       });
+      /* CPF: a Receita só responde com a data de nascimento junto, então ela também dispara a busca. */
+      var elNasc = b.tipoDoc === 'CPF' ? $('#f_nasc' + b.suf) : null;
+      if (elNasc) ['input', 'blur'].forEach(function (ev) {
+        elNasc.addEventListener(ev, function () { if (nascDe(b) && !caixa(b.doc).hidden) tentarBusca(b); });
+      });
     });
     CEPS.forEach(function (c) { $('#f_cep' + c.suf).addEventListener('input', function () { tentarCep(c); }); });
     ['nome', 'nomeC'].forEach(function (k) {
@@ -984,18 +989,29 @@
   function docLimpo(b) { var v = $('#f_' + b.doc).value; return b.tipoDoc === 'CPF' ? v.replace(/\D/g, '') : cnpjLimpo(v); }
   function docValido(b, d) { return b.tipoDoc === 'CPF' ? cpfValido(d) : cnpjValido(d); }
 
+  /* Data de nascimento (dd/mm/aaaa) da pessoa do CPF, só quando já é uma data plausível: evita consultar a cada dígito do ano. */
+  function nascDe(b) {
+    if (b.tipoDoc !== 'CPF') return '';
+    var c = campo('nasc' + b.suf);
+    var v = c ? lerCampo(c) : '';
+    var ano = +v.slice(6);
+    return v && ano >= 1900 && chaveDia(v) <= chaveDia(hojeBr()) ? v : '';
+  }
+  function chaveBusca(b, d) { var n = nascDe(b); return n ? d + '|' + n : d; }
+
   function tentarBusca(b) {
     var d = docLimpo(b);
     if (!docValido(b, d)) { if (!d) { dica(b.doc, ''); b.ultimo = ''; } return; }
-    if (b.ultimo === d) return;
-    b.ultimo = d;
+    var nasc = nascDe(b);
+    if (b.ultimo === chaveBusca(b, d)) return;
+    b.ultimo = chaveBusca(b, d);
     var pedido = b.seq = (b.seq || 0) + 1;
     var man = $('#man_' + b.nome);
     var alvo = $('#f_' + b.nome);
     dica(b.doc, 'Buscando…');
     /* CNPJ: a base pública da Receita é consultada daqui do navegador, junto com a busca nas fichas anteriores (que tem prioridade). */
     var publica = b.tipoDoc === 'CNPJ' ? consultarCnpjPublico(d).catch(function () { return null; }) : null;
-    var busca = srv('consultarDocumento', b.tipoDoc, d);
+    var busca = srv('consultarDocumento', b.tipoDoc, d, nasc);
     if (publica) {
       busca = busca.then(function (r) {
         return r.achou ? r : publica.then(function (p) { return p || r; });
@@ -1006,7 +1022,8 @@
     busca.then(function (r) {
       if (pedido !== b.seq) return;
       if (!r.achou) {
-        if (!b.manualUsuario) man.checked = true;
+        /* Falta só a data de nascimento: o nome continua esperando a busca. */
+        if (!b.manualUsuario && !r.precisaNasc) man.checked = true;
         dica(b.doc, r.mensagem, 'aviso');
         sincronizar();
         return;
@@ -1200,7 +1217,7 @@
     $('#man_nome').checked = nomeManual;
     $('#man_nomeC').checked = !!f && !!f.nomeC;
     BUSCAS.forEach(function (b) {
-      b.ultimo = f ? docLimpo(b) : '';
+      b.ultimo = f ? chaveBusca(b, docLimpo(b)) : '';
       b.seq = (b.seq || 0) + 1;
       b.manualUsuario = b.nome === 'nome' ? nomeManual : (!!f && !!f.nomeC);
       dica(b.doc, '');
