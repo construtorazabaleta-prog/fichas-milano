@@ -140,6 +140,37 @@
   .t-fila .in-ordem.dup { border-color: var(--dev-t); background: var(--dev-f); }
   .funil { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
   .funil .kpi .n { font-size: 26px; }
+
+  /* Graficos dos indicadores. Uma serie = cor da marca; ate 3 series = cores validadas para daltonismo e contraste. */
+  .graficos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .graf .alvo { cursor: pointer; }
+  .graf .alvo:hover .marca-g, .graf .alvo:focus-visible .marca-g, .graf circle.alvo:hover, .graf circle.alvo:focus-visible { opacity: .8; }
+  .graf .alvo:focus { outline: 0; }
+  .graf .alvo:focus-visible .foco { stroke: var(--marca); stroke-width: 1.5; }
+  .rosca-cx { display: grid; gap: 12px; }
+  .graf .rosca-cx svg { width: 128px; margin: 0 auto; }
+  .legenda { display: grid; gap: 2px; min-width: 0; }
+  .legenda button { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: transparent; border: 0; padding: 6px 7px; border-radius: 8px; cursor: pointer; font-size: 13.5px; }
+  .legenda button:hover { background: #F5F5F7; }
+  .legenda button[aria-pressed="true"] { background: var(--marca-clara); font-weight: 600; color: var(--marca-escura); }
+  .graf.filtrado .legenda button[aria-pressed="false"] { opacity: .55; }
+  .amostra { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 10px; display: inline-block; }
+  .legenda .rot-l { min-width: 0; overflow-wrap: break-word; }
+  .legenda .v { margin-left: auto; color: var(--suave); font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 400; }
+  .legenda-s { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--suave); margin: 0 0 12px; }
+  .legenda-s span { display: inline-flex; align-items: center; gap: 6px; }
+  .funil-g, .empilhadas { display: grid; gap: 8px; }
+  .etapa { display: grid; grid-template-columns: minmax(96px, 168px) minmax(0, 1fr) 74px; align-items: center; gap: 10px; font-size: 13.5px; }
+  .etapa .pista { display: flex; justify-content: center; height: 22px; }
+  .etapa .pista i { display: block; height: 100%; background: var(--marca); border-radius: 4px; }
+  .etapa .num { text-align: right; color: var(--suave); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .etapa .num b { color: var(--tinta); }
+  .emp { display: grid; grid-template-columns: minmax(70px, 112px) minmax(0, 1fr) 26px; align-items: center; gap: 10px; font-size: 13.5px; }
+  .emp .nome { overflow-wrap: anywhere; }
+  .emp .pista { display: flex; gap: 2px; height: 16px; }
+  .emp .pista i { display: block; height: 100%; min-width: 3px; }
+  .emp .pista i:last-child { border-radius: 0 4px 4px 0; }
+  .emp .tot { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
   .vazio { padding: 48px 20px; text-align: center; color: var(--suave); }
 
   /* Painel de detalhe */
@@ -338,15 +369,16 @@
   @media (max-width: 900px) {
     .grade { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .tripla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tripla, .graficos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .usuario { display: none; }
     .atend { grid-template-columns: minmax(0, 1fr); }
     #fila { max-height: 240px; }
   }
   @media (max-width: 600px) {
-    .grade, .dupla, .tripla, .novo-usuario { grid-template-columns: minmax(0, 1fr); }
+    .grade, .dupla, .tripla, .graficos, .novo-usuario { grid-template-columns: minmax(0, 1fr); }
     .campo.largo { grid-column: auto; }
     .kpis, .funil { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .etapa { grid-template-columns: 112px minmax(0, 1fr) 68px; }
     .marca small { display: none; }
     .abas { width: 100%; order: 3; overflow-x: auto; }
     .abas button { flex: 1 0 auto; justify-content: center; padding: 7px 10px; font-size: 13.5px; }
@@ -520,11 +552,16 @@
       <p class="sub" id="sub-ind"></p>
       <div class="kpis" id="kpis"></div>
       <div class="funil" id="funil"></div>
+      <div class="dupla">
+        <div class="cartao graf"><h3>Funil do lançamento</h3><p>Do primeiro atendimento à mesa. Cada etapa conta quem passou pelas anteriores. Mostra sempre o total.</p><div id="g-funil"></div></div>
+        <div class="cartao graf"><h3>Clientes por gerente ou sócio</h3><p>Quem atendeu cada cliente registrado. Mostra sempre o total.</p><div id="g-gerentes"></div></div>
+      </div>
       <div class="barra" id="filtros-ind"></div>
       <div class="dupla">
         <div class="cartao graf"><h3>Fichas por dia</h3><p>Pela data de recebimento. Clique em um dia para filtrar.</p><div id="g-dia"></div></div>
         <div class="cartao graf"><h3>Fichas acumuladas</h3><p>Soma desde a primeira ficha</p><div id="g-acum"></div></div>
       </div>
+      <div class="graficos" id="graficos"></div>
       <div class="tripla" id="quebras"></div>
     </section>
 
@@ -1590,10 +1627,10 @@
   /* ---------------- Indicadores (com filtro cruzado) ---------------- */
   var SIMNAO = ['SIM', 'NÃO'];
   var DIMS = [
-    { id: 'tamanho', titulo: 'Tamanho do apto' },
+    { id: 'tamanho', titulo: 'Tamanho do apto', graf: 'colunas', vazioCurto: 'N/I' },
     { id: 'andar', titulo: 'Andar' },
     { id: 'garagem', titulo: 'Garagem' },
-    { id: 'pagamento', titulo: 'Condições de pagamento' },
+    { id: 'pagamento', titulo: 'Condições de pagamento', graf: 'rosca' },
     { id: 'desejo', titulo: 'Desejo de compra' },
     { id: 'status', titulo: 'Situação da ficha', ops: ['PENDENTE', 'APROVADA', 'DEVOLVIDA'], rot: function (v) { return NOME_STATUS[v] || v; } },
     { id: 'tipo', titulo: 'Tipo de cliente' },
@@ -1606,7 +1643,9 @@
     { id: 'confirmou', titulo: 'Cliente confirmou os dados', ops: SIMNAO, val: function (f) { return f.clienteConfirmou === 'SIM' ? 'SIM' : 'NÃO'; } },
     { id: 'atendimento', titulo: 'Atendimento marcado', ops: SIMNAO, val: function (f) { return f.diaAtend ? 'SIM' : 'NÃO'; } },
     { id: 'temperatura', titulo: 'Temperatura do cliente (última reunião)', ops: ['5', '4', '3', '2', '1'], vazio: 'Sem reunião',
-      val: function (f) { return tempAtual(f); }, rot: function (v) { return v + ' · ' + NOME_TEMP[v]; } },
+      val: function (f) { return tempAtual(f); }, rot: function (v) { return v + ' · ' + NOME_TEMP[v]; },
+      graf: 'colunas', inverter: true, curto: function (v) { return v; }, vazioCurto: 'Sem',
+      sub: 'Número de fichas. 1 = muito fria, 5 = muito quente. Clique para filtrar.' },
     { id: 'dia', titulo: 'Dia do recebimento', semCartao: true, val: function (f) { return f.dia || ''; }, rot: function (v) { return v; } },
     { id: 'reunioes', titulo: 'Reuniões realizadas', ops: ['0', '1', '2', '3'], val: function (f) { return String(reunioesDe(f).length); },
       rot: function (v) { return v === '0' ? 'Nenhuma' : (v === '1' ? '1 reunião' : v + ' reuniões'); } }
@@ -1663,41 +1702,183 @@
     $('#g-dia').innerHTML = serie.length ? graficoBarras(serie, larguraDe('#g-dia'), diaSel) : '<p>Nenhuma ficha neste filtro.</p>';
     $('#g-acum').innerHTML = serie.length ? graficoLinha(serieAcum, larguraDe('#g-acum'), diaSel) : '<p>Nenhuma ficha neste filtro.</p>';
 
-    $('#quebras').innerHTML = DIMS.filter(function (d) { return !d.semCartao; }).map(function (d) {
-      var doCartao = todas.filter(function (f) { return passaFiltros(f, d.id); });
-      var cont = {};
-      doCartao.forEach(function (f) { valoresDim(d, f).forEach(function (v) { cont[v] = (cont[v] || 0) + 1; }); });
-      var c = campo(d.id);
-      var ordem = d.ops ? d.ops.slice() : (c && !d.multi ? opcoesDe(c).slice() : []);
-      var extras = Object.keys(cont).filter(function (v) { return v !== '' && ordem.indexOf(v) < 0; })
-        .sort(function (a, b) { return cont[b] - cont[a] || (a < b ? -1 : 1); });
-      ordem = ordem.concat(extras);
-      var cortados = 0;
-      if (d.top && ordem.length > d.top) { cortados = ordem.length - d.top; ordem = ordem.slice(0, d.top); }
-      var sel = Object.prototype.hasOwnProperty.call(S.fInd, d.id) ? S.fInd[d.id] : null;
-      if (sel !== null && sel !== '' && ordem.indexOf(sel) < 0) ordem.push(sel);
-      var linhas = ordem.map(function (v) { return { v: v, n: cont[v] || 0 }; });
-      if (cont[''] || sel === '') linhas.push({ v: '', n: cont[''] || 0, ni: true });
-      var max = Math.max.apply(null, linhas.map(function (l) { return l.n; }).concat([1]));
-      return '<div class="cartao graf' + (sel !== null ? ' filtrado' : '') + '"><h3>' + esc(d.titulo) + '</h3><p>Número de fichas' +
-        (d.multi ? ' (conta 1º e 2º corretor)' : '') + '</p><div class="linhas-b">' +
-        (linhas.length ? linhas.map(function (l) {
-          var pct = doCartao.length ? Math.round(l.n / doCartao.length * 100) : 0;
-          return '<button type="button" class="lb' + (l.ni ? ' ni' : '') + '" data-dim="' + d.id + '" data-val="' + esc(l.v) + '" aria-pressed="' + (sel === l.v) + '">' +
-            '<span class="topo-b"><span>' + esc(rotuloDim(d, l.v)) + '</span><span>' + l.n + ' · ' + pct + '%</span></span>' +
-            '<span class="trilho"><i style="width:' + (l.n / max * 100) + '%"></i></span></button>';
-        }).join('') : '<p>Sem dados.</p>') +
-        (cortados ? '<p class="resto">+ ' + cortados + ' com menos fichas</p>' : '') + '</div></div>';
-    }).join('') + '<div class="cartao graf"><h3>Temperatura média por reunião</h3><p>Nota de 1 a 5, nas fichas do filtro</p><div class="linhas-b">' +
+    /* Cada dimensao vira um grafico (colunas ou rosca) ou um cartao de barras; todos filtram os outros ao clicar. */
+    var dims = DIMS.filter(function (d) { return !d.semCartao; }).map(function (d) {
+      var x = dadosDim(d, todas);
+      var tipo = d.graf || 'lista';
+      if (tipo === 'rosca' && x.linhas.filter(function (l) { return !l.ni; }).length > CORES_SERIE.length) tipo = 'lista';
+      return { d: d, x: x, tipo: tipo };
+    });
+    var comGrafico = dims.filter(function (c) { return c.tipo !== 'lista'; });
+    $('#graficos').innerHTML = comGrafico.map(function (c) {
+      return '<div class="cartao graf' + (c.x.sel !== null ? ' filtrado' : '') + '"><h3>' + esc(c.d.titulo) + '</h3><p>' +
+        esc(c.d.sub || 'Número de fichas. Clique para filtrar.') + '</p><div data-g="' + c.d.id + '"></div></div>';
+    }).join('');
+    comGrafico.forEach(function (c) {
+      var area = document.querySelector('#graficos [data-g="' + c.d.id + '"]');
+      area.innerHTML = c.tipo === 'rosca' ? graficoRosca(c.d, c.x)
+        : graficoColunas(c.d, c.x, Math.max(240, Math.round(area.getBoundingClientRect().width) || 320));
+    });
+    $('#g-funil').innerHTML = graficoFunil();
+    $('#g-gerentes').innerHTML = graficoGerentes();
+
+    $('#quebras').innerHTML = dims.filter(function (c) { return c.tipo === 'lista'; }).map(function (c) { return cartaoLista(c.d, c.x); }).join('') +
+      '<div class="cartao graf"><h3>Temperatura média por reunião</h3><p>Nota de 1 a 5, nas fichas do filtro</p><div class="linhas-b">' +
       [1, 2, 3].map(function (n) {
         var vs = base.map(function (f) { return +f['reuTemp' + n]; }).filter(Boolean);
         return '<div class="lb"><div class="topo-b"><span>' + n + 'ª reunião</span><span>' +
           (vs.length ? nota(media(vs)) + ' · ' + vs.length + (vs.length === 1 ? ' ficha' : ' fichas') : 'sem registros') + '</span></div>' +
           '<div class="trilho"><i style="width:' + (media(vs) / 5 * 100) + '%"></i></div></div>';
       }).join('') + '</div></div>' +
-      cartaoFunil('Atendimentos por gerente ou sócio', ['gerente']) +
       cartaoFunil('Atendimentos por corretor', ['corretor', 'corretor2']) + cartaoFunil('Atendimentos por imobiliária', ['imobiliaria', 'imobiliaria2']);
   }
+
+  /* Contagem de uma dimensao nas fichas que passam nos outros filtros. "i" e a posicao fixa da opcao (a cor segue a opcao, nao a ordem). */
+  function dadosDim(d, todas) {
+    var doCartao = todas.filter(function (f) { return passaFiltros(f, d.id); });
+    var cont = {};
+    doCartao.forEach(function (f) { valoresDim(d, f).forEach(function (v) { cont[v] = (cont[v] || 0) + 1; }); });
+    var c = campo(d.id);
+    var ordem = d.ops ? d.ops.slice() : (c && !d.multi ? opcoesDe(c).slice() : []);
+    var extras = Object.keys(cont).filter(function (v) { return v !== '' && ordem.indexOf(v) < 0; })
+      .sort(function (a, b) { return cont[b] - cont[a] || (a < b ? -1 : 1); });
+    ordem = ordem.concat(extras);
+    var cortados = 0;
+    if (d.top && ordem.length > d.top) { cortados = ordem.length - d.top; ordem = ordem.slice(0, d.top); }
+    var sel = Object.prototype.hasOwnProperty.call(S.fInd, d.id) ? S.fInd[d.id] : null;
+    if (sel !== null && sel !== '' && ordem.indexOf(sel) < 0) ordem.push(sel);
+    var linhas = ordem.map(function (v, i) { return { v: v, n: cont[v] || 0, i: i }; });
+    if (cont[''] || sel === '') linhas.push({ v: '', n: cont[''] || 0, ni: true });
+    return { total: doCartao.length, linhas: linhas, sel: sel, cortados: cortados };
+  }
+
+  function cartaoLista(d, x) {
+    var max = Math.max.apply(null, x.linhas.map(function (l) { return l.n; }).concat([1]));
+    return '<div class="cartao graf' + (x.sel !== null ? ' filtrado' : '') + '"><h3>' + esc(d.titulo) + '</h3><p>Número de fichas' +
+      (d.multi ? ' (conta 1º e 2º corretor)' : '') + '</p><div class="linhas-b">' +
+      (x.linhas.length ? x.linhas.map(function (l) {
+        var pct = x.total ? Math.round(l.n / x.total * 100) : 0;
+        return '<button type="button" class="lb' + (l.ni ? ' ni' : '') + '" data-dim="' + d.id + '" data-val="' + esc(l.v) + '" aria-pressed="' + (x.sel === l.v) + '">' +
+          '<span class="topo-b"><span>' + esc(rotuloDim(d, l.v)) + '</span><span>' + l.n + ' · ' + pct + '%</span></span>' +
+          '<span class="trilho"><i style="width:' + (l.n / max * 100) + '%"></i></span></button>';
+      }).join('') : '<p>Sem dados.</p>') +
+      (x.cortados ? '<p class="resto">+ ' + x.cortados + ' com menos fichas</p>' : '') + '</div></div>';
+  }
+
+  /* ----- Graficos ----- */
+  var CORES_SERIE = ['#9C2F2F', '#B9822A', '#2F7FB5'];
+  var COR_NI = '#C7C7CC';
+  function nFichas(n) { return n + (n === 1 ? ' ficha' : ' fichas'); }
+  function alvoAttrs(d, l, marcada) {
+    return ' class="alvo" role="button" tabindex="0" data-dim="' + d.id + '" data-val="' + esc(l.v) + '" aria-pressed="' + marcada +
+      '" aria-label="' + esc(rotuloDim(d, l.v)) + ': ' + nFichas(l.n) + '"';
+  }
+
+  /* Colunas: uma serie, cor da marca; topo arredondado, base reta; valor em cima de cada coluna. */
+  function graficoColunas(d, x, W) {
+    var linhas = x.linhas.filter(function (l) { return !l.ni; });
+    if (d.inverter) linhas.reverse();
+    linhas = linhas.concat(x.linhas.filter(function (l) { return l.ni; }));
+    if (!linhas.length) return '<p>Sem dados.</p>';
+    var H = 212, m = { e: 28, d: 8, t: 22, b: 26 };
+    var y = escalaY(Math.max.apply(null, linhas.map(function (l) { return l.n; }).concat([1])));
+    var aw = W - m.e - m.d, ah = H - m.t - m.b, base = m.t + ah;
+    var py = function (v) { return m.t + ah - (v / y.topo) * ah; };
+    var grade = y.marcas.map(function (v) {
+      return '<line x1="' + m.e + '" x2="' + (W - m.d) + '" y1="' + py(v) + '" y2="' + py(v) + '" stroke="#ECECF0"/>' +
+        '<text x="' + (m.e - 6) + '" y="' + (py(v) + 4) + '" text-anchor="end">' + v + '</text>';
+    }).join('');
+    var passo = aw / linhas.length, lb = Math.min(24, Math.max(6, passo * 0.56));
+    var corpo = linhas.map(function (l, i) {
+      var x0 = m.e + passo * i, cx = x0 + passo / 2, yy = py(l.n), h = base - yy, r = Math.min(4, lb / 2, h);
+      var marcada = x.sel === l.v, apagada = x.sel !== null && !marcada;
+      var rot = l.ni ? (d.vazioCurto || 'N/I') : (d.curto ? d.curto(l.v) : rotuloDim(d, l.v));
+      var pct = x.total ? Math.round(l.n / x.total * 100) : 0;
+      var xe = cx - lb / 2, xd = cx + lb / 2;
+      return '<g' + alvoAttrs(d, l, marcada) + '><title>' + esc(rotuloDim(d, l.v)) + ': ' + nFichas(l.n) + ' (' + pct + '%). Clique para filtrar.</title>' +
+        '<rect class="foco" x="' + (x0 + 1) + '" y="' + (m.t - 16) + '" width="' + (passo - 2) + '" height="' + (ah + m.b + 14) + '" rx="6" fill="transparent"/>' +
+        (l.n ? '<path class="marca-g" d="M' + xe + ',' + base + ' V' + (yy + r) + ' Q' + xe + ',' + yy + ' ' + (xe + r) + ',' + yy + ' H' + (xd - r) +
+          ' Q' + xd + ',' + yy + ' ' + xd + ',' + (yy + r) + ' V' + base + ' Z" fill="' + (l.ni ? COR_NI : '#400909') + '"' + (apagada ? ' opacity=".28"' : '') + '/>' +
+          '<text x="' + cx + '" y="' + (yy - 5) + '" text-anchor="middle" style="fill:#1D1D1F;font-weight:600">' + l.n + '</text>' : '') +
+        '<text x="' + cx + '" y="' + (H - 8) + '" text-anchor="middle"' + (marcada ? ' style="fill:#400909;font-weight:700"' : '') + '>' + esc(rot) + '</text></g>';
+    }).join('');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(d.titulo) + '">' + grade + corpo + '</svg>';
+  }
+
+  /* Rosca: parte do todo com ate 3 opcoes. Fatias separadas por 2px da cor do fundo; a legenda traz os valores e tambem filtra. */
+  function graficoRosca(d, x) {
+    var soma = x.linhas.reduce(function (a, l) { return a + l.n; }, 0);
+    var R = 46, C = 2 * Math.PI * R, pos = 0;
+    var cor = function (l) { return l.ni ? COR_NI : CORES_SERIE[l.i]; };
+    var comValor = x.linhas.filter(function (l) { return l.n > 0; });
+    var folga = comValor.length > 1 ? 2 : 0;
+    var arcos = comValor.map(function (l) {
+      var len = l.n / soma * C, visivel = Math.max(0.5, len - folga);
+      var marcada = x.sel === l.v, apagada = x.sel !== null && !marcada;
+      var s = '<circle' + alvoAttrs(d, l, marcada) + ' cx="60" cy="60" r="' + R + '" fill="none" stroke="' + cor(l) + '" stroke-width="18" stroke-dasharray="' +
+        visivel + ' ' + (C - visivel) + '" stroke-dashoffset="' + (-pos) + '"' + (apagada ? ' opacity=".28"' : '') + '><title>' + esc(rotuloDim(d, l.v)) + ': ' +
+        nFichas(l.n) + ' (' + Math.round(l.n / soma * 100) + '%). Clique para filtrar.</title></circle>';
+      pos += len;
+      return s;
+    }).join('');
+    var svg = '<svg viewBox="0 0 120 120" role="img" aria-label="' + esc(d.titulo) + '">' +
+      (soma ? '<g transform="rotate(-90 60 60)">' + arcos + '</g>' : '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="#F0F0F3" stroke-width="18"/>') +
+      '<text x="60" y="60" text-anchor="middle" style="fill:#1D1D1F;font-size:22px;font-weight:600">' + soma + '</text>' +
+      '<text x="60" y="76" text-anchor="middle">' + (soma === 1 ? 'ficha' : 'fichas') + '</text></svg>';
+    var legenda = '<div class="legenda">' + x.linhas.map(function (l) {
+      var pct = soma ? Math.round(l.n / soma * 100) : 0;
+      return '<button type="button" data-dim="' + d.id + '" data-val="' + esc(l.v) + '" aria-pressed="' + (x.sel === l.v) + '">' +
+        '<i class="amostra" style="background:' + cor(l) + '"></i><span class="rot-l">' + esc(rotuloDim(d, l.v)) + '</span><span class="v">' + l.n + ' · ' + pct + '%</span></button>';
+    }).join('') + '</div>';
+    return '<div class="rosca-cx">' + svg + legenda + '</div>';
+  }
+
+  /* Funil: etapas em sequencia, cada uma contida na anterior. Barras centralizadas, uma cor so. */
+  function graficoFunil() {
+    var reais = fichasReais();
+    var comPix = reais.filter(function (f) { return f.diaPix; });
+    var comOrdem = comPix.filter(function (f) { return f.ordemFinal; });
+    var comMesa = comOrdem.filter(function (f) { return f.diaAtend; });
+    var etapas = [['Clientes registrados', S.fichas.length], ['Com ficha de interesse', reais.length], ['Com PIX', comPix.length],
+      ['Com ordem final', comOrdem.length], ['Com mesa marcada', comMesa.length]];
+    var topo = etapas[0][1];
+    if (!topo) return '<p>Nenhum cliente registrado ainda.</p>';
+    return '<div class="funil-g">' + etapas.map(function (e, i) {
+      var pct = Math.round(e[1] / topo * 100);
+      var anterior = i ? etapas[i - 1][1] : 0;
+      var dica = e[0] + ': ' + e[1] + ' (' + pct + '% dos clientes registrados' + (anterior ? '; ' + Math.round(e[1] / anterior * 100) + '% da etapa anterior' : '') + ')';
+      return '<div class="etapa" title="' + esc(dica) + '"><span>' + e[0] + '</span>' +
+        '<span class="pista"><i style="width:' + (e[1] ? Math.max(1.5, e[1] / topo * 100) : 0) + '%"></i></span>' +
+        '<span class="num"><b>' + e[1] + '</b> · ' + pct + '%</span></div>';
+    }).join('') + '</div>';
+  }
+
+  /* Gerentes e socios: barras empilhadas com 3 series (legenda sempre presente; total na ponta). */
+  function graficoGerentes() {
+    if (!S.fichas.length) return '<p>Nenhum cliente registrado ainda.</p>';
+    var series = ['Em atendimento', 'Virou ficha', 'Ficha direta'];
+    var cores = [CORES_SERIE[2], CORES_SERIE[0], CORES_SERIE[1]];
+    var nomes = (S.listas['GERENTES'] || []).slice();
+    var m = {};
+    S.fichas.forEach(function (f) {
+      var g = f.gerente || '';
+      if (g && nomes.indexOf(g) < 0) nomes.push(g);
+      m[g] = m[g] || [0, 0, 0];
+      m[g][ehAtend(f) ? 0 : (f.viraFichaEm ? 1 : 2)]++;
+    });
+    if (m['']) nomes.push('');
+    var total = function (n) { var v = m[n] || [0, 0, 0]; return v[0] + v[1] + v[2]; };
+    var max = Math.max.apply(null, nomes.map(total).concat([1]));
+    return '<div class="legenda-s">' + series.map(function (s, i) { return '<span><i class="amostra" style="background:' + cores[i] + '"></i>' + s + '</span>'; }).join('') + '</div>' +
+      '<div class="empilhadas">' + nomes.map(function (n) {
+        var v = m[n] || [0, 0, 0];
+        var nome = n || 'Não informado';
+        return '<div class="emp"><span class="nome">' + esc(nome) + '</span><span class="pista">' + v.map(function (q, i) {
+          return q ? '<i style="width:calc(' + (q / max * 100) + '% - 2px);background:' + cores[i] + '" title="' + esc(nome + ' · ' + series[i] + ': ' + q) + '"></i>' : '';
+        }).join('') + '</span><span class="tot">' + total(n) + '</span></div>';
+      }).join('') + '</div>';
+  }
+
   /* Funil: atendimentos que viraram ficha. Nao entra no filtro cruzado (mostra sempre o total). */
   function desenharFunil(fichas) {
     var emAtend = S.fichas.filter(ehAtend);
@@ -2303,6 +2484,18 @@
       if (Object.prototype.hasOwnProperty.call(S.fInd, d) && S.fInd[d] === v) delete S.fInd[d]; else S.fInd[d] = v;
       desenharIndicadores();
     });
+    /* Graficos: colunas, fatias e legenda filtram como os cartoes (o botao da legenda ja responde ao teclado sozinho). */
+    var filtrarGrafico = function (ev) {
+      var alvo = ev.target.closest && ev.target.closest('[data-dim]');
+      if (!alvo) return;
+      if (ev.type === 'keydown' && (alvo.tagName === 'BUTTON' || (ev.key !== 'Enter' && ev.key !== ' '))) return;
+      ev.preventDefault();
+      var d = alvo.getAttribute('data-dim'), v = alvo.getAttribute('data-val');
+      if (Object.prototype.hasOwnProperty.call(S.fInd, d) && S.fInd[d] === v) delete S.fInd[d]; else S.fInd[d] = v;
+      desenharIndicadores();
+    };
+    $('#graficos').addEventListener('click', filtrarGrafico);
+    $('#graficos').addEventListener('keydown', filtrarGrafico);
     var filtrarDia = function (ev) {
       var alvo = ev.target.closest && ev.target.closest('[data-dia]');
       if (!alvo || (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ')) return;
