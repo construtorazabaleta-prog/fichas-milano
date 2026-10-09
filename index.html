@@ -850,7 +850,17 @@
     var man = $('#man_' + b.nome);
     var alvo = $('#f_' + b.nome);
     dica(b.doc, 'Buscando…');
-    srv('consultarDocumento', b.tipoDoc, d).then(function (r) {
+    /* CNPJ: a base pública da Receita é consultada daqui do navegador, junto com a busca nas fichas anteriores (que tem prioridade). */
+    var publica = b.tipoDoc === 'CNPJ' ? consultarCnpjPublico(d).catch(function () { return null; }) : null;
+    var busca = srv('consultarDocumento', b.tipoDoc, d);
+    if (publica) {
+      busca = busca.then(function (r) {
+        return r.achou ? r : publica.then(function (p) { return p || r; });
+      }, function (e) {
+        return publica.then(function (p) { if (p) return p; throw e; });
+      });
+    }
+    busca.then(function (r) {
       if (pedido !== b.seq) return;
       if (!r.achou) {
         if (!b.manualUsuario) man.checked = true;
@@ -879,6 +889,48 @@
       dica(b.doc, 'A busca não funcionou agora (' + e.message + '). Digite o nome.', 'aviso');
       sincronizar();
     });
+  }
+
+  /*
+   * CNPJ na base pública da Receita Federal, direto do navegador: BrasilAPI e, se ela falhar,
+   * Minha Receita (mesmo formato) e CNPJ.ws. Devolve o mesmo formato da busca do servidor, ou null.
+   */
+  function cnpjDoFormatoBrasilApi(j) {
+    var txt = function (v) { return String(v == null ? '' : v).trim(); };
+    var nome = txt(j && j.razao_social).toUpperCase();
+    if (!nome) return null;
+    var dados = { nome: nome };
+    var rua = [txt(j.descricao_tipo_de_logradouro), txt(j.logradouro)].filter(Boolean).join(' ');
+    var endereco = [rua, txt(j.numero), txt(j.complemento)].filter(Boolean).join(', ').toUpperCase();
+    if (endereco) dados.endereco = endereco;
+    var cep = txt(j.cep).replace(/\D/g, '');
+    if (cep.length === 8) dados.cep = cep.replace(/(\d{5})(\d{3})/, '$1-$2');
+    var cidade = [txt(j.municipio), txt(j.uf)].filter(Boolean).join('/').toUpperCase();
+    if (cidade) dados.cidadeUf = cidade;
+    if (txt(j.bairro)) dados.bairro = txt(j.bairro).toUpperCase();
+    return { achou: true, origem: 'Receita Federal', dados: dados, situacao: txt(j.descricao_situacao_cadastral).toUpperCase() };
+  }
+  function cnpjDoFormatoCnpjWs(j) {
+    var e = (j && j.estabelecimento) || {};
+    return cnpjDoFormatoBrasilApi({
+      razao_social: j && j.razao_social, descricao_tipo_de_logradouro: e.tipo_logradouro, logradouro: e.logradouro,
+      numero: e.numero, complemento: e.complemento, cep: e.cep, bairro: e.bairro,
+      municipio: e.cidade && e.cidade.nome, uf: e.estado && e.estado.sigla, descricao_situacao_cadastral: e.situacao_cadastral
+    });
+  }
+  function consultarCnpjPublico(doc) {
+    var fontes = [
+      ['https://brasilapi.com.br/api/cnpj/v1/', cnpjDoFormatoBrasilApi],
+      ['https://minhareceita.org/', cnpjDoFormatoBrasilApi],
+      ['https://publica.cnpj.ws/cnpj/', cnpjDoFormatoCnpjWs]
+    ];
+    var tentar = function (i) {
+      if (i >= fontes.length) return Promise.resolve(null);
+      return pedirJson(fontes[i][0] + encodeURIComponent(doc)).then(function (j) {
+        return fontes[i][1](j) || tentar(i + 1);
+      }, function () { return tentar(i + 1); });
+    };
+    return tentar(0);
   }
 
   /* ----- Busca do endereco pelo CEP (ViaCEP; se estiver fora do ar, BrasilAPI) ----- */
