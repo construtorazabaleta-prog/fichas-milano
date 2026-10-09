@@ -129,6 +129,17 @@
   .selo.PENDENTE { background: var(--pend-f); color: var(--pend-t); }
   .selo.APROVADA { background: var(--apr-f); color: var(--apr-t); }
   .selo.DEVOLVIDA { background: var(--dev-f); color: var(--dev-t); }
+  .selo.ATENDIMENTO { background: #E6EEF7; color: #24507A; }
+
+  /* Atendimentos (etapa anterior a ficha), fila pelo PIX e funil */
+  .modo-atend [data-campo="corretor"] .rot-txt::after { content: ' *'; color: var(--marca); }
+  .t-fila td.num { font-variant-numeric: tabular-nums; color: var(--suave); white-space: nowrap; }
+  .t-fila tr.sem-pix td { color: var(--suave); }
+  .t-fila .in-ordem { width: 72px; text-align: center; border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; background: var(--branco); font-variant-numeric: tabular-nums; }
+  .t-fila .in-ordem:focus { outline: 0; border-color: var(--marca); box-shadow: 0 0 0 3px rgba(64,9,9,.14); }
+  .t-fila .in-ordem.dup { border-color: var(--dev-t); background: var(--dev-f); }
+  .funil { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .funil .kpi .n { font-size: 26px; }
   .vazio { padding: 48px 20px; text-align: center; color: var(--suave); }
 
   /* Painel de detalhe */
@@ -335,7 +346,7 @@
   @media (max-width: 600px) {
     .grade, .dupla, .tripla, .novo-usuario { grid-template-columns: minmax(0, 1fr); }
     .campo.largo { grid-column: auto; }
-    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpis, .funil { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .marca small { display: none; }
     .abas { width: 100%; order: 3; overflow-x: auto; }
     .abas button { flex: 1 0 auto; justify-content: center; padding: 7px 10px; font-size: 13.5px; }
@@ -363,9 +374,11 @@
     <div class="topo-in">
       <div class="marca"><img class="logo" data-logo alt=""><b>Zabaleta <span>Milano</span></b><small>Fichas de interesse</small></div>
       <nav class="abas" role="tablist">
+        <button role="tab" data-aba="clientes" aria-selected="false">Atendimentos</button>
         <button role="tab" data-aba="nova" aria-selected="true">Nova ficha</button>
         <button role="tab" data-aba="fichas" aria-selected="false">Fichas <span class="conta" id="conta-pend" hidden></span></button>
-        <button role="tab" data-aba="atend" aria-selected="false">Atendimentos</button>
+        <button role="tab" data-aba="fila" aria-selected="false">Fila</button>
+        <button role="tab" data-aba="atend" aria-selected="false">Mesas</button>
         <button role="tab" data-aba="ind" aria-selected="false">Indicadores</button>
         <button role="tab" data-aba="usuarios" aria-selected="false" id="aba-usuarios" hidden>Usuários</button>
       </nav>
@@ -375,13 +388,37 @@
   </header>
 
   <main>
+    <!-- Atendimentos: clientes atendidos por um corretor, antes da ficha de interesse -->
+    <section id="v-clientes" hidden>
+      <h1>Atendimentos</h1>
+      <p class="sub" id="sub-clientes"></p>
+      <div class="barra">
+        <input class="busca" id="busca-cli" type="search" placeholder="Buscar por cliente, celular, CPF ou corretor" aria-label="Buscar atendimentos">
+        <select id="ordenar-cli" class="seletor" aria-label="Ordenar os atendimentos">
+          <option value="recentes">Mais recentes primeiro</option>
+          <option value="temp">Pela temperatura (mais quentes)</option>
+          <option value="corretor">Por corretor</option>
+        </select>
+        <button type="button" class="bt pri" id="bt-novo-atend">Novo atendimento</button>
+      </div>
+      <div class="cartao">
+        <div class="tabela-rolo">
+          <table>
+            <thead><tr><th>Registro</th><th>Cliente</th><th>Corretor</th><th>Interesse</th><th>Contatos</th><th>Temperatura</th><th></th></tr></thead>
+            <tbody id="linhas-cli"></tbody>
+          </table>
+        </div>
+        <div class="vazio" id="vazio-cli" hidden></div>
+      </div>
+    </section>
+
     <!-- 1. Digitar / 3. Retificar -->
     <section id="v-nova">
       <h1 id="titulo-form">Nova ficha de interesse</h1>
       <p class="sub" id="sub-form">Digite os dados da ficha em papel. Campos com <span class="req">*</span> são obrigatórios.</p>
       <div class="faixa-edicao" id="faixa-edicao" hidden>
         <span id="texto-edicao"></span>
-        <button type="button" class="bt mini" id="bt-cancelar-edicao">Cancelar retificação</button>
+        <button type="button" class="bt mini" id="bt-cancelar-edicao">Cancelar</button>
       </div>
       <div class="caixa-erro" id="erro-form" hidden role="alert"></div>
       <form id="form" novalidate autocomplete="off">
@@ -420,9 +457,28 @@
       </div>
     </section>
 
-    <!-- Atendimentos: fila pela ordem final, mesas e horarios -->
+    <!-- Fila: fichas na ordem do PIX, para a gestao definir a ordem final -->
+    <section id="v-fila" hidden>
+      <h1>Fila</h1>
+      <p class="sub" id="sub-fila"></p>
+      <div class="barra">
+        <button type="button" class="bt pri" id="bt-ordem-vazias" hidden>Preencher pelo PIX as que faltam</button>
+        <button type="button" class="bt" id="bt-ordem-tudo" hidden>Renumerar tudo pelo PIX</button>
+      </div>
+      <div class="cartao">
+        <div class="tabela-rolo">
+          <table class="t-fila">
+            <thead><tr><th>PIX nº</th><th>PIX</th><th>Cliente</th><th>Pagamento</th><th>Cliente Zabaleta</th><th>1ª compra</th><th>Apto</th><th>Situação</th><th>Ordem final</th></tr></thead>
+            <tbody id="linhas-fila"></tbody>
+          </table>
+        </div>
+        <div class="vazio" id="vazio-fila" hidden></div>
+      </div>
+    </section>
+
+    <!-- Mesas: fila pela ordem final, mesas e horarios -->
     <section id="v-atend" hidden>
-      <h1>Atendimentos</h1>
+      <h1>Mesas</h1>
       <p class="sub" id="sub-atend"></p>
       <details class="cartao cfg-atend" id="cfg-atend" hidden>
         <summary>Mesas, dias e horários</summary>
@@ -462,6 +518,7 @@
       <h1>Indicadores do lançamento</h1>
       <p class="sub" id="sub-ind"></p>
       <div class="kpis" id="kpis"></div>
+      <div class="funil" id="funil"></div>
       <div class="barra" id="filtros-ind"></div>
       <div class="dupla">
         <div class="cartao graf"><h3>Fichas por dia</h3><p>Pela data de recebimento. Clique em um dia para filtrar.</p><div id="g-dia"></div></div>
@@ -511,10 +568,16 @@
   'use strict';
 
   var S = { usuario: null, campos: [], listas: {}, fichas: [], atendimento: null, q: '', status: 'TODAS', ordem: 'recentes', editId: null, aberta: null,
-    fInd: {}, diaAtend: '', filaSel: null, cfgDias: [], corretores: {}, reuEdit: null, aba: 'nova' };
+    fInd: {}, diaAtend: '', filaSel: null, cfgDias: [], corretores: {}, reuEdit: null, aba: 'nova',
+    modo: 'FICHA', converter: false, qCli: '', ordemCli: 'recentes' };
   var LARGOS = { nome: 1, nomeC: 1, endereco: 1, enderecoC: 1, email: 1, emailC: 1, corretor: 1, corretor2: 1, imobiliaria: 1, imobiliaria2: 1, pixCorretor: 1, pixCorretor2: 1 };
   var TOTAIS = { pagamento: 1 };
-  var NOME_STATUS = { PENDENTE: 'Pendente', APROVADA: 'Aprovada', DEVOLVIDA: 'Devolvida' };
+  var NOME_STATUS = { 'EM ATENDIMENTO': 'Em atendimento', PENDENTE: 'Pendente', APROVADA: 'Aprovada', DEVOLVIDA: 'Devolvida' };
+  var SUB_FICHA = 'Digite os dados da ficha em papel. Campos com <span class="req">*</span> são obrigatórios.';
+  var SUB_ATEND = 'Cadastro rápido do cliente que está sendo atendido. Só nome e corretor são obrigatórios; o resto pode entrar depois, quando virar ficha.';
+  /* Registro em atendimento = etapa anterior a ficha de interesse. */
+  function ehAtend(f) { return f.status === 'EM ATENDIMENTO'; }
+  function fichasReais() { return S.fichas.filter(function (f) { return !ehAtend(f); }); }
   var PAPEIS = [['DIGITADOR', 'Digitar e retificar'], ['APROVADOR', 'Digitar e aprovar'], ['ADMIN', 'Tudo, inclusive usuários']];
   var NOME_PAPEL = { DIGITADOR: 'Digitação', APROVADOR: 'Aprovador', ADMIN: 'Administrador' };
 
@@ -693,7 +756,13 @@
   function campo(id) { return S.campos.filter(function (c) { return c.id === id; })[0]; }
   function caixa(id) { return document.querySelector('[data-campo="' + id + '"]'); }
   function opcoesDe(c) { return c.tipo === 'simnao' ? ['SIM', 'NÃO'] : (c.opcoes || S.listas[c.lista] || []); }
-  function ehChips(c) { return c.tipo === 'simnao' || (c.tipo === 'lista' && opcoesDe(c).length <= 4); }
+  /* Botoes de um clique para listas curtas: ate 4 opcoes, ou ate 10 quando os textos sao bem curtos (ex.: tamanhos de apto). */
+  function ehChips(c) {
+    if (c.tipo === 'simnao') return true;
+    if (c.tipo !== 'lista') return false;
+    var ops = opcoesDe(c);
+    return ops.length <= 4 || (ops.length <= 10 && ops.join('').length <= 40);
+  }
   function rotuloOpcao(v) { return ROTULOS[v] || v; }
   function chipHtml(c, valor) {
     return '<label class="chip"><input type="radio" name="f_' + c.id + '" value="' + esc(valor) + '"><span>' + esc(rotuloOpcao(valor)) + '</span></label>';
@@ -736,6 +805,30 @@
     return '<div class="' + classe + '" data-campo="' + c.id + '">' + ctrl + '<small class="erro"></small>' + depois + '</div>';
   }
 
+  /* Primeiro contato: so aparece ao registrar um atendimento novo. */
+  function contatoHtml() {
+    var chips = function (nome, ops, rot) {
+      return '<div class="chips">' + ops.map(function (o) {
+        return '<label class="chip"><input type="radio" name="' + nome + '" value="' + o + '"><span>' + esc(rot(o)) + '</span></label>';
+      }).join('') + '</div>';
+    };
+    var req = ' <i class="req">*</i>';
+    return '<fieldset class="grupo" id="grupo-contato" hidden><legend>Primeiro contato</legend><div class="grade">' +
+      '<div class="campo" data-campo="pcDia"><label class="rot" for="pc-dia">Data do atendimento' + req + '</label><input type="date" id="pc-dia"><small class="erro"></small></div>' +
+      '<div class="campo" data-campo="pcCorretor"><div class="rot">Corretor acompanhou?' + req + '</div>' + chips('pc-corretor', ['SIM', 'NÃO'], rotuloOpcao) + '<small class="erro"></small></div>' +
+      '<div class="campo total" data-campo="pcTemp"><div class="rot">Temperatura (1 = muito fria, 5 = muito quente)' + req + '</div>' +
+        chips('pc-temp', ['1', '2', '3', '4', '5'], function (o) { return o + ' · ' + NOME_TEMP[o]; }) + '<small class="erro"></small></div>' +
+      '<div class="campo total" data-campo="pcAssuntos"><label class="rot" for="pc-assuntos">Assuntos tratados' + req + '</label>' +
+        '<textarea id="pc-assuntos" rows="3" maxlength="1000"></textarea><small class="erro"></small></div>' +
+      '</div></fieldset>';
+  }
+  function limparContato() {
+    $('#pc-dia').value = brParaIso(hojeBr());
+    $('#pc-assuntos').value = '';
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="pc-corretor"], input[name="pc-temp"]'), function (r) { r.checked = false; r.dataset.on = ''; });
+    ['pcDia', 'pcCorretor', 'pcTemp', 'pcAssuntos'].forEach(function (k) { marcarErro(k, ''); });
+  }
+
   function montarForm() {
     $('#form-grupos').innerHTML = agrupar().map(function (g) {
       var topo = '';
@@ -752,8 +845,8 @@
         corpo += '<div class="grupo-topo meio"><label class="interruptor"><input type="checkbox" id="tem-corretor2"> Incluir 2º corretor</label></div>' +
           '<div class="grade" id="grade-corretor2" hidden>' + segundos.map(campoHtml).join('') + '</div>';
       }
-      return '<fieldset class="grupo"><legend>' + esc(g.nome) + '</legend>' + topo + corpo + '</fieldset>';
-    }).join('') + '<datalist id="dl_corretores"></datalist><datalist id="dl_imobiliarias"></datalist>';
+      return '<fieldset class="grupo" data-grupo="' + esc(g.nome) + '"><legend>' + esc(g.nome) + '</legend>' + topo + corpo + '</fieldset>';
+    }).join('') + contatoHtml() + '<datalist id="dl_corretores"></datalist><datalist id="dl_imobiliarias"></datalist>';
 
     S.campos.forEach(function (c) {
       var el = $('#f_' + c.id);
@@ -803,12 +896,14 @@
     S.campos.forEach(function (c) { if (c.so) caixa(c.id).hidden = (c.so === 'PJ') !== pj; });
     caixa('nome').querySelector('.rot-txt').textContent = pj ? 'Razão social' : 'Nome completo';
 
+    var atend = S.modo === 'ATEND';
     var casado = !pj && /^CASAD/.test(lerCampo(campo('estadoCivil')));
+    var obriga = casado && !atend;   /* no atendimento os dados do conjuge ainda nao sao exigidos */
     var tc = $('#tem-conjuge');
-    if (casado) tc.checked = true;
-    tc.disabled = casado;
-    $('#nota-conjuge').hidden = !casado;
-    $('#rot-tem-conjuge').textContent = casado ? 'Dados do cônjuge' : (pj ? 'Incluir dados do sócio' : 'Incluir dados do cônjuge ou sócio');
+    if (obriga) tc.checked = true;
+    tc.disabled = obriga;
+    $('#nota-conjuge').hidden = !obriga;
+    $('#rot-tem-conjuge').textContent = obriga ? 'Dados do cônjuge' : (casado ? 'Incluir dados do cônjuge' : (pj ? 'Incluir dados do sócio' : 'Incluir dados do cônjuge ou sócio'));
     $('#grade-conjuge').hidden = !tc.checked;
     $('#bt-copiar-end').hidden = !tc.checked;
     caixa('vinculoC').hidden = casado;
@@ -823,6 +918,16 @@
       el.readOnly = !manual;
       el.placeholder = manual ? '' : (k === 'nome' && pj ? 'Preenchido pela busca do CNPJ' : 'Preenchido pela busca do CPF');
     });
+
+    /* Etapa de atendimento: some o que so existe na ficha (recebimento, assinaturas, PIX). */
+    $('#form').classList.toggle('modo-atend', atend);
+    S.campos.forEach(function (c) { if (c.soFicha && caixa(c.id)) caixa(c.id).hidden = atend; });
+    Array.prototype.forEach.call(document.querySelectorAll('#form-grupos fieldset[data-grupo]'), function (fs) {
+      var nome = fs.dataset.grupo;
+      fs.hidden = !S.campos.some(function (c) { return c.grupo === nome && !c.oculto && !(atend && c.soFicha); });
+      if (nome === 'Recebimento') fs.querySelector('legend').textContent = atend ? 'Sobre o cliente' : nome;
+    });
+    $('#grupo-contato').hidden = !(atend && !S.editId);
   }
 
   function marcarErro(idCampo, msg) {
@@ -1074,30 +1179,59 @@
     sincronizar();
   }
 
+  function cabecalhoForm(titulo, sub, faixa, botao, podeLimpar) {
+    $('#titulo-form').textContent = titulo;
+    $('#sub-form').hidden = !sub;
+    if (sub) $('#sub-form').innerHTML = sub;
+    $('#texto-edicao').textContent = faixa || '';
+    $('#faixa-edicao').hidden = !faixa;
+    $('#bt-salvar').textContent = botao;
+    $('#bt-limpar').hidden = !podeLimpar;
+  }
+  function abrirForm() { irPara('nova'); window.scrollTo(0, 0); }
+
   function novaFicha() {
-    S.editId = null;
+    S.editId = null; S.modo = 'FICHA'; S.converter = false;
     preencherForm(null);
     definirCampo(campo('dia'), hojeBr());
     definirCampo(campo('hora'), agoraHora());
-    $('#titulo-form').textContent = 'Nova ficha de interesse';
-    $('#sub-form').hidden = false;
-    $('#faixa-edicao').hidden = true;
-    $('#bt-salvar').textContent = 'Gravar ficha';
-    $('#bt-limpar').hidden = false;
+    cabecalhoForm('Nova ficha de interesse', SUB_FICHA, '', 'Gravar ficha', true);
   }
 
   function retificar(f) {
+    if (ehAtend(f)) return editarAtendimento(f);
     fecharPainel();
-    S.editId = f.id;
+    S.editId = f.id; S.modo = 'FICHA'; S.converter = false;
     preencherForm(f);
-    $('#titulo-form').textContent = 'Retificar ficha ' + f.id;
-    $('#sub-form').hidden = true;
-    $('#texto-edicao').textContent = 'Você está retificando a ficha ' + f.id + ' (' + f.nome + '). Cada alteração fica registrada no histórico.';
-    $('#faixa-edicao').hidden = false;
-    $('#bt-salvar').textContent = 'Gravar retificação';
-    $('#bt-limpar').hidden = true;
-    irPara('nova');
-    window.scrollTo(0, 0);
+    cabecalhoForm('Retificar ficha ' + f.id, '', 'Você está retificando a ficha ' + f.id + ' (' + f.nome + '). Cada alteração fica registrada no histórico.', 'Gravar retificação', false);
+    abrirForm();
+  }
+
+  /* ----- Atendimento: cadastro leve antes da ficha ----- */
+  function novoAtendimento() {
+    S.editId = null; S.modo = 'ATEND'; S.converter = false;
+    preencherForm(null);
+    limparContato();
+    cabecalhoForm('Novo atendimento', SUB_ATEND, '', 'Gravar atendimento', true);
+    abrirForm();
+  }
+  function editarAtendimento(f) {
+    fecharPainel();
+    S.editId = f.id; S.modo = 'ATEND'; S.converter = false;
+    preencherForm(f);
+    cabecalhoForm('Atendimento ' + f.id, '', 'Você está alterando os dados do atendimento ' + f.id + ' (' + f.nome + '). Os contatos ficam no painel do atendimento.', 'Gravar alterações', false);
+    abrirForm();
+  }
+  /* Abre a ficha completa com tudo o que o atendimento ja tem; ao gravar, o mesmo registro vira ficha. */
+  function transformarEmFicha(f) {
+    fecharPainel();
+    S.editId = f.id; S.modo = 'FICHA'; S.converter = true;
+    preencherForm(f);
+    definirCampo(campo('dia'), hojeBr());
+    definirCampo(campo('hora'), agoraHora());
+    cabecalhoForm('Transformar em ficha · ' + f.id, '', 'Complete os dados de ' + f.nome + '. Ao gravar, o atendimento ' + f.id +
+      ' vira ficha de interesse e nada do que já foi registrado se perde.', 'Gravar ficha', false);
+    abrirForm();
   }
 
   function enviarForm(ev) {
@@ -1108,8 +1242,10 @@
     var casado = !pj && /^CASAD/.test(lerCampo(campo('estadoCivil')));
     var comSegunda = $('#tem-conjuge').checked;
     var comCorretor2 = $('#tem-corretor2').checked;
+    var atend = S.modo === 'ATEND';
     S.campos.forEach(function (c) {
-      var fora = c.oculto || (c.so === 'PF' && pj) || (c.so === 'PJ' && !pj) || (c.grupo === GRUPO_2 && !comSegunda) || (c.segundo && !comCorretor2);
+      var fora = c.oculto || (c.so === 'PF' && pj) || (c.so === 'PJ' && !pj) || (c.grupo === GRUPO_2 && !comSegunda) || (c.segundo && !comCorretor2) ||
+        (atend && c.soFicha);
       dados[c.id] = fora ? '' : lerCampo(c);
     });
     var nomeManual = $('#man_nome').checked;
@@ -1121,22 +1257,32 @@
       if (c.oculto) return;
       var v = dados[c.id];
       var msg = '';
-      if (c.obrig && !v) msg = (c.id === 'nome' && !nomeManual) ? 'Informe o ' + (pj ? 'CNPJ' : 'CPF') + ' para buscar ou marque "Digitar manualmente"' : 'Obrigatório';
+      var obrig = atend ? (c.id === 'nome' || c.id === 'corretor') : c.obrig;
+      if (obrig && !v) msg = (c.id === 'nome' && !nomeManual) ? 'Informe o ' + (pj ? 'CNPJ' : 'CPF') + ' para buscar ou marque "Digitar manualmente"' : 'Obrigatório';
       else if (c.tipo === 'cpf' && v && !cpfValido(v)) msg = 'CPF inválido';
       else if (c.tipo === 'cnpj' && v && !cnpjValido(v)) msg = 'CNPJ inválido';
       else if (c.tipo === 'escolha' && v) { msg = conferirEscolha(c); if (!msg) dados[c.id] = lerCampo(c); }
-      if (!msg && !v && casado && (c.id === 'cpfC' || c.id === 'nomeC')) msg = 'Obrigatório para cliente casado(a)';
-      if (!msg && !v && !casado && temSegunda && c.id === 'nomeC') msg = 'Obrigatório';
+      if (!msg && !v && casado && !atend && (c.id === 'cpfC' || c.id === 'nomeC')) msg = 'Obrigatório para cliente casado(a)';
+      if (!msg && !v && (atend || !casado) && temSegunda && c.id === 'nomeC') msg = 'Obrigatório';
       marcarErro(c.id, msg);
       if (msg) faltas.push(c);
     });
+    var contato = null;
+    if (atend && !S.editId) {
+      var marcado = function (nome) { var r = document.querySelector('input[name="' + nome + '"]:checked'); return r ? r.value : ''; };
+      contato = { dia: isoParaBr($('#pc-dia').value), corretor: marcado('pc-corretor'), temperatura: marcado('pc-temp'), assuntos: $('#pc-assuntos').value.trim() };
+      [['pcDia', contato.dia], ['pcCorretor', contato.corretor], ['pcTemp', contato.temperatura], ['pcAssuntos', contato.assuntos]].forEach(function (par) {
+        marcarErro(par[0], par[1] ? '' : 'Obrigatório');
+        if (!par[1]) faltas.push({ id: par[0] });
+      });
+    }
     var cx = $('#erro-form');
     if (faltas.length) {
       cx.textContent = 'Confira os campos destacados antes de gravar.';
       cx.hidden = false;
       var alvo = caixa(faltas[0].id);
       alvo.scrollIntoView({ block: 'center' });
-      var foco = alvo.querySelector('input:not([type=checkbox]), select');
+      var foco = alvo.querySelector('input:not([type=checkbox]), select, textarea');
       if (foco) foco.focus();
       return;
     }
@@ -1145,11 +1291,13 @@
     var rotulo = bt.textContent;
     bt.disabled = true; bt.textContent = 'Gravando…';
     var editando = S.editId;
-    srv('salvarFicha', dados, editando).then(function (r) {
+    var opc = atend ? { etapa: 'ATENDIMENTO', contato: contato } : (S.converter ? { etapa: 'FICHA' } : null);
+    srv('salvarFicha', dados, editando, opc).then(function (r) {
       S.fichas = r.fichas;
       toast(r.mensagem + (r.aviso ? '\n' + r.aviso : ''));
       atualizarTudo();
-      if (editando) { novaFicha(); irPara('fichas'); abrirPainel(r.ficha.id); }
+      if (atend) { novaFicha(); irPara('clientes'); if (editando) abrirPainel(r.ficha.id); }
+      else if (editando) { novaFicha(); irPara('fichas'); abrirPainel(r.ficha.id); }
       else { novaFicha(); window.scrollTo(0, 0); $('#f_numFicha').focus(); }
     }).catch(function (e) {
       cx.textContent = e.message; cx.hidden = false;
@@ -1212,7 +1360,7 @@
   function contar(status) { return S.fichas.filter(function (f) { return f.status === status; }).length; }
 
   function desenharFiltros() {
-    var itens = [['TODAS', 'Todas', S.fichas.length], ['PENDENTE', 'Pendentes', contar('PENDENTE')],
+    var itens = [['TODAS', 'Todas', fichasReais().length], ['PENDENTE', 'Pendentes', contar('PENDENTE')],
       ['APROVADA', 'Aprovadas', contar('APROVADA')], ['DEVOLVIDA', 'Devolvidas', contar('DEVOLVIDA')]];
     $('#filtros').innerHTML = itens.map(function (i) {
       return '<button type="button" data-status="' + i[0] + '" aria-pressed="' + (S.status === i[0]) + '">' + i[1] + ' · ' + i[2] + '</button>';
@@ -1224,7 +1372,7 @@
   function fichasFiltradas() {
     var q = semAcento(S.q).trim();
     var qd = q.replace(/\D/g, '');
-    var lista = S.fichas.filter(function (f) {
+    var lista = fichasReais().filter(function (f) {
       if (S.status !== 'TODAS' && f.status !== S.status) return false;
       if (!q) return true;
       var texto = semAcento([f.id, f.numFicha, f.nome, f.nomeC, f.email, f.corretor, f.corretor2, f.imobiliaria, f.imobiliaria2, f.cpf, f.cnpj, f.celular].join(' '));
@@ -1249,8 +1397,9 @@
   function desenharLista() {
     desenharFiltros();
     var lista = fichasFiltradas();
-    $('#sub-fichas').textContent = S.fichas.length
-      ? lista.length + ' de ' + S.fichas.length + ' fichas. Clique em uma linha para ver, retificar' + (S.usuario.aprovador ? ' ou validar.' : '.')
+    var total = fichasReais().length;
+    $('#sub-fichas').textContent = total
+      ? lista.length + ' de ' + total + ' fichas. Clique em uma linha para ver, retificar' + (S.usuario.aprovador ? ' ou validar.' : '.')
       : 'Nenhuma ficha digitada ainda.';
     $('#linhas').innerHTML = lista.map(function (f) {
       var interesse = [f.tamanho, f.andar, f.garagem].filter(Boolean).join(' · ');
@@ -1271,7 +1420,7 @@
     }).join('');
     var vazio = $('#vazio');
     vazio.hidden = lista.length > 0;
-    vazio.textContent = S.fichas.length ? 'Nenhuma ficha encontrada com esse filtro.' : 'As fichas digitadas aparecem aqui.';
+    vazio.textContent = total ? 'Nenhuma ficha encontrada com esse filtro.' : 'As fichas digitadas aparecem aqui.';
     var pend = contar('PENDENTE');
     var conta = $('#conta-pend');
     conta.hidden = !pend; conta.textContent = pend;
@@ -1314,14 +1463,19 @@
     S.aberta = id;
     var pj = f.tipo === PJ;
     var ap = S.usuario.aprovador;
+    var atd = ehAtend(f);
     var podeRetificar = ap || f.status !== 'APROVADA';
     var acoes = '';
-    if (podeRetificar) acoes += '<button class="bt" data-acao="retificar">Retificar</button>';
-    acoes += '<button class="bt" data-acao="imprimir">Ficha em PDF</button>';
-    if (ap && f.status !== 'APROVADA') acoes += '<button class="bt ok" data-acao="APROVAR">Aprovar</button>';
-    if (ap && f.status !== 'DEVOLVIDA') acoes += '<button class="bt perigo" data-acao="pedir-devolucao">Devolver para correção</button>';
-    if (ap && f.status !== 'PENDENTE') acoes += '<button class="bt" data-acao="REABRIR">Voltar para pendente</button>';
-    if (!podeRetificar) acoes += '<span class="menor">Ficha aprovada. Só um aprovador pode retificá-la.</span>';
+    if (atd) {
+      acoes += '<button class="bt pri" data-acao="transformar">Transformar em ficha</button><button class="bt" data-acao="retificar">Editar dados</button>';
+    } else {
+      if (podeRetificar) acoes += '<button class="bt" data-acao="retificar">Retificar</button>';
+      acoes += '<button class="bt" data-acao="imprimir">Ficha em PDF</button>';
+      if (ap && f.status !== 'APROVADA') acoes += '<button class="bt ok" data-acao="APROVAR">Aprovar</button>';
+      if (ap && f.status !== 'DEVOLVIDA') acoes += '<button class="bt perigo" data-acao="pedir-devolucao">Devolver para correção</button>';
+      if (ap && f.status !== 'PENDENTE') acoes += '<button class="bt" data-acao="REABRIR">Voltar para pendente</button>';
+      if (!podeRetificar) acoes += '<span class="menor">Ficha aprovada. Só um aprovador pode retificá-la.</span>';
+    }
 
     var corpo = '';
     if (f.status === 'DEVOLVIDA' && f.obsValidacao) {
@@ -1335,7 +1489,7 @@
     /* Confirmacao dos dados com o cliente pelo WhatsApp */
     var link = linkWhats(f);
     var confirmou = f.clienteConfirmou === 'SIM';
-    corpo += '<div class="bloco"><h3>Confirmação com o cliente</h3><p class="linha-conf">' +
+    if (!atd) corpo += '<div class="bloco"><h3>Confirmação com o cliente</h3><p class="linha-conf">' +
       (confirmou ? '<span class="selo APROVADA">Cliente confirmou</span> <span class="menor" style="display:inline">' + esc(f.confirmadoPor) + ' · ' + esc(f.confirmadoEm) + '</span>'
         : '<span class="selo PENDENTE">Ainda não confirmou</span>') + '</p><div class="painel-acoes">' +
       (link ? '<a class="bt" href="' + esc(link) + '" target="_blank" rel="noopener">Enviar dados pelo WhatsApp</a>' : '<span class="menor">Sem celular na ficha para enviar pelo WhatsApp.</span>') +
@@ -1347,9 +1501,11 @@
       var campos = g.campos.filter(function (c) {
         if ((c.so === 'PF' && pj) || (c.so === 'PJ' && !pj)) return false;
         if (c.segundo && !f[c.id]) return false;
+        if (atd && c.soFicha) return false;
         return true;
       });
-      var titulo = g.nome;
+      if (!campos.length) return;
+      var titulo = atd && g.nome === 'Recebimento' ? 'Sobre o cliente' : g.nome;
       if (g.nome === GRUPO_2) {
         if (!campos.some(function (c) { return c.id !== 'vinculoC' && f[c.id]; })) return;
         titulo = f.vinculoC === 'SÓCIO' ? 'Sócio' : 'Cônjuge';
@@ -1359,17 +1515,18 @@
         var rot = c.id === 'nome' && pj ? 'Razão social' : c.rotulo;
         return '<div' + (LARGOS[c.id] || TOTAIS[c.id] ? ' class="total"' : '') + '><dt>' + esc(rot) + '</dt><dd>' +
           esc(rotuloOpcao(f[c.id]) || '—') + '</dd></div>';
-      }).join('') + (g.nome === 'PIX e atendimento' ? '<div class="total"><dt>Atendimento marcado</dt><dd>' +
+      }).join('') + (g.nome === 'PIX e atendimento' ? '<div class="total"><dt>Mesa marcada</dt><dd>' +
         (f.diaAtend ? esc(f.diaAtend) + ' às ' + esc(f.horaAtend) + ', mesa ' + esc(f.mesaAtend) : '—') + '</dd></div>' : '') + '</dl></div>';
     });
     corpo += '<div class="bloco"><h3>Controle</h3><dl class="pares">' +
-      '<div><dt>Digitada por</dt><dd>' + esc(f.digitadoPor || '—') + '</dd></div><div><dt>Em</dt><dd>' + esc(f.digitadoEm || '—') + '</dd></div>' +
+      '<div><dt>' + (atd || f.viraFichaEm ? 'Atendimento registrado por' : 'Digitada por') + '</dt><dd>' + esc(f.digitadoPor || '—') + '</dd></div><div><dt>Em</dt><dd>' + esc(f.digitadoEm || '—') + '</dd></div>' +
+      (f.viraFichaEm ? '<div><dt>Virou ficha por</dt><dd>' + esc(f.viraFichaPor) + '</dd></div><div><dt>Em</dt><dd>' + esc(f.viraFichaEm) + '</dd></div>' : '') +
       (f.atualizadoPor ? '<div><dt>Última retificação</dt><dd>' + esc(f.atualizadoPor) + '</dd></div><div><dt>Em</dt><dd>' + esc(f.atualizadoEm) + '</dd></div>' : '') +
       (f.validadoPor ? '<div><dt>Validada por</dt><dd>' + esc(f.validadoPor) + '</dd></div><div><dt>Em</dt><dd>' + esc(f.validadoEm) + '</dd></div>' : '') +
       '</dl></div>';
     corpo += '<div class="bloco"><h3>Histórico</h3><ul class="hist" id="hist"><li class="quem">Carregando…</li></ul></div>';
 
-    $('#painel').innerHTML = '<div class="painel-topo"><div class="l1"><span class="id">Ficha ' + esc(f.id) + (f.numFicha ? ' · nº ' + esc(f.numFicha) : '') + '</span>' +
+    $('#painel').innerHTML = '<div class="painel-topo"><div class="l1"><span class="id">' + (atd ? 'Atendimento ' : 'Ficha ') + esc(f.id) + (f.numFicha ? ' · nº ' + esc(f.numFicha) : '') + '</span>' +
       '<span class="selo ' + esc(f.status) + '">' + esc(NOME_STATUS[f.status] || f.status) + '</span>' +
       '<button class="fechar" data-acao="fechar" aria-label="Fechar">✕</button></div>' +
       '<h2>' + esc(f.nome) + '</h2><div class="painel-acoes">' + acoes + '</div></div>' +
@@ -1400,6 +1557,7 @@
     if (acao === 'fechar') return fecharPainel();
     if (acao === 'imprimir') return abrirImpressao(id);
     if (acao === 'retificar') return retificar(S.fichas.filter(function (x) { return x.id === id; })[0]);
+    if (acao === 'transformar') return transformarEmFicha(S.fichas.filter(function (x) { return x.id === id; })[0]);
     if (acao === 'pedir-devolucao') { $('#caixa-devolucao').hidden = false; $('#motivo').focus(); return; }
     if (acao === 'cancelar-devolucao') { $('#caixa-devolucao').hidden = true; return; }
     if (acao === 'editar-reuniao') { S.reuEdit = +bt.dataset.n; abrirPainel(id, true); var ed = document.querySelector('.reuniao.editando'); if (ed) ed.scrollIntoView({ block: 'nearest' }); return; }
@@ -1470,7 +1628,8 @@
   }
 
   function desenharIndicadores() {
-    var todas = S.fichas;
+    var todas = fichasReais();
+    desenharFunil(todas);
     var base = todas.filter(function (f) { return passaFiltros(f, null); });
     var hoje = hojeBr();
     var conta = function (st) { return base.filter(function (f) { return f.status === st; }).length; };
@@ -1533,7 +1692,41 @@
         return '<div class="lb"><div class="topo-b"><span>' + n + 'ª reunião</span><span>' +
           (vs.length ? nota(media(vs)) + ' · ' + vs.length + (vs.length === 1 ? ' ficha' : ' fichas') : 'sem registros') + '</span></div>' +
           '<div class="trilho"><i style="width:' + (media(vs) / 5 * 100) + '%"></i></div></div>';
-      }).join('') + '</div></div>';
+      }).join('') + '</div></div>' +
+      cartaoFunil('Atendimentos por corretor', ['corretor', 'corretor2']) + cartaoFunil('Atendimentos por imobiliária', ['imobiliaria', 'imobiliaria2']);
+  }
+  /* Funil: atendimentos que viraram ficha. Nao entra no filtro cruzado (mostra sempre o total). */
+  function desenharFunil(fichas) {
+    var emAtend = S.fichas.filter(ehAtend);
+    var viraram = fichas.filter(function (f) { return f.viraFichaEm; });
+    var passaram = emAtend.length + viraram.length;
+    $('#funil').innerHTML = [
+      ['Clientes em atendimento', emAtend.length],
+      ['Atendimentos que viraram ficha', viraram.length],
+      ['Conversão dos atendimentos', passaram ? Math.round(viraram.length / passaram * 100) + '%' : '—'],
+      ['Fichas sem atendimento antes', fichas.length - viraram.length]
+    ].map(function (x) { return '<div class="cartao kpi"><div class="n">' + x[1] + '</div><div class="r">' + x[0] + '</div></div>'; }).join('');
+  }
+  function cartaoFunil(titulo, chaves) {
+    var m = {};
+    S.fichas.forEach(function (f) {
+      var atd = ehAtend(f);
+      if (!atd && !f.viraFichaEm) return;
+      chaves.map(function (k) { return f[k]; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).forEach(function (v) {
+        m[v] = m[v] || { a: 0, v: 0 };
+        if (atd) m[v].a++; else m[v].v++;
+      });
+    });
+    var nomes = Object.keys(m).sort(function (a, b) { return (m[b].a + m[b].v) - (m[a].a + m[a].v) || (a < b ? -1 : 1); });
+    var cortados = Math.max(0, nomes.length - 10);
+    nomes = nomes.slice(0, 10);
+    var max = Math.max.apply(null, nomes.map(function (n) { return m[n].a + m[n].v; }).concat([1]));
+    return '<div class="cartao graf"><h3>' + esc(titulo) + '</h3><p>Em atendimento e já convertidos em ficha</p><div class="linhas-b">' +
+      (nomes.length ? nomes.map(function (n) {
+        return '<div class="lb"><div class="topo-b"><span>' + esc(n) + '</span><span>' + m[n].a + ' em atendimento · ' + m[n].v + (m[n].v === 1 ? ' virou ficha' : ' viraram ficha') + '</span></div>' +
+          '<div class="trilho"><i style="width:' + ((m[n].a + m[n].v) / max * 100) + '%"></i></div></div>';
+      }).join('') : '<p>Nenhum atendimento registrado.</p>') +
+      (cortados ? '<p class="resto">+ ' + cortados + ' com menos atendimentos</p>' : '') + '</div></div>';
   }
   function filtrosAtivos() { return DIMS.filter(function (d) { return Object.prototype.hasOwnProperty.call(S.fInd, d.id); }); }
 
@@ -1630,9 +1823,133 @@
       rot + '</svg>';
   }
 
-  /* ---------------- Atendimentos: fila pela ordem final, mesas e horarios ---------------- */
+  /* ---------------- Atendimentos: clientes em atendimento, antes da ficha ---------------- */
+  function desenharClientes() {
+    var todos = S.fichas.filter(ehAtend);
+    var q = semAcento(S.qCli).trim();
+    var qd = q.replace(/\D/g, '');
+    var lista = todos.filter(function (f) {
+      if (!q) return true;
+      var texto = semAcento([f.id, f.nome, f.nomeC, f.email, f.corretor, f.corretor2, f.imobiliaria, f.imobiliaria2, f.cpf, f.cnpj, f.celular].join(' '));
+      if (texto.indexOf(q) >= 0) return true;
+      return qd.length >= 3 && (f.cpf + f.cnpj + f.celular).replace(/\D/g, '').indexOf(qd) >= 0;
+    });
+    var recentes = function (a, b) { return a.id < b.id ? 1 : -1; };
+    if (S.ordemCli === 'temp') lista.sort(function (a, b) { return (+tempAtual(b) || 0) - (+tempAtual(a) || 0) || recentes(a, b); });
+    else if (S.ordemCli === 'corretor') lista.sort(function (a, b) { return a.corretor < b.corretor ? -1 : (a.corretor > b.corretor ? 1 : recentes(a, b)); });
+    else lista.sort(recentes);
+    var viraram = fichasReais().filter(function (f) { return f.viraFichaEm; }).length;
+    var jaViraram = viraram ? ' ' + viraram + (viraram === 1 ? ' atendimento já virou ficha.' : ' atendimentos já viraram ficha.') : '';
+    $('#sub-clientes').textContent = (todos.length
+      ? lista.length + ' de ' + todos.length + (todos.length === 1 ? ' cliente em atendimento.' : ' clientes em atendimento.') + ' Clique em uma linha para ver os contatos.'
+      : 'Registre aqui cada cliente atendido por um corretor, antes da ficha de interesse.') + jaViraram;
+    $('#linhas-cli').innerHTML = lista.map(function (f) {
+      var reus = reunioesDe(f);
+      var ultimo = reus.length ? reus[reus.length - 1] : null;
+      var interesse = [f.tamanho, f.andar, f.garagem].filter(Boolean).join(' · ');
+      var corretor = f.corretor ? esc(f.corretor) + (f.corretor2 ? ' <span class="mais">+1</span>' : '') : '—';
+      return '<tr data-id="' + esc(f.id) + '" tabindex="0">' +
+        '<td class="id">' + esc(f.id) + '<span class="menor">desde ' + esc(reus.length ? reus[0].dia : (f.digitadoEm || '').slice(0, 10)) + '</span></td>' +
+        '<td>' + esc(f.nome) + '<span class="menor">' + esc(f.celular || f.cpf || f.cnpj) + '</span></td>' +
+        '<td>' + corretor + '<span class="menor">' + esc(f.imobiliaria) + '</span></td>' +
+        '<td>' + esc(interesse || '—') + '<span class="menor">' + esc(f.pagamento) + '</span></td>' +
+        '<td>' + reus.length + (reus.length === 1 ? ' contato' : ' contatos') + (ultimo ? '<span class="menor">último em ' + esc(ultimo.dia) + '</span>' : '') + '</td>' +
+        '<td>' + (seloTemp(tempAtual(f)) || '—') + '</td>' +
+        '<td><button type="button" class="bt mini" data-virar="' + esc(f.id) + '">Transformar em ficha</button></td></tr>';
+    }).join('');
+    var vazio = $('#vazio-cli');
+    vazio.hidden = lista.length > 0;
+    vazio.textContent = todos.length ? 'Nenhum atendimento encontrado com essa busca.' : 'Nenhum cliente em atendimento. Use "Novo atendimento" para registrar o primeiro.';
+  }
+
+  /* ---------------- Fila: fichas na ordem do PIX, para definir a ordem final ---------------- */
+  function desenharFila() {
+    var pode = S.usuario.aprovador;
+    var reais = fichasReais();
+    var porId = function (a, b) { return a.id < b.id ? -1 : 1; };
+    var comPix = reais.filter(function (f) { return f.diaPix; }).sort(function (a, b) {
+      var ka = chavePix(a), kb = chavePix(b);
+      return ka < kb ? -1 : (ka > kb ? 1 : porId(a, b));
+    });
+    var semPix = reais.filter(function (f) { return !f.diaPix; }).sort(porId);
+    var vezes = {};
+    reais.forEach(function (f) { if (f.ordemFinal) vezes[f.ordemFinal] = (vezes[f.ordemFinal] || 0) + 1; });
+    var faltam = comPix.filter(function (f) { return !f.ordemFinal; }).length;
+    $('#sub-fila').textContent = (comPix.length
+      ? comPix.length + (comPix.length === 1 ? ' ficha com PIX, na ordem em que o PIX entrou. ' : ' fichas com PIX, na ordem em que o PIX entrou. ') +
+        (faltam ? faltam + (faltam === 1 ? ' ainda está sem ordem final.' : ' ainda estão sem ordem final.') : 'Todas já têm ordem final.')
+      : 'Nenhuma ficha com PIX registrado ainda.') +
+      (pode ? ' A ordem final é decisão da gestão: use a sugestão pelo PIX e ajuste onde for preciso.' : '');
+    $('#bt-ordem-vazias').hidden = !pode || !faltam;
+    var tudo = $('#bt-ordem-tudo');
+    tudo.hidden = !pode || !comPix.length;
+    tudo.dataset.armado = ''; tudo.textContent = 'Renumerar tudo pelo PIX';
+    var simNao = function (v) { return v ? esc(rotuloOpcao(v)) : '—'; };
+    var linha = function (f, pos) {
+      var repetida = f.ordemFinal && vezes[f.ordemFinal] > 1;
+      return '<tr data-id="' + esc(f.id) + '"' + (pos ? '' : ' class="sem-pix"') + '>' +
+        '<td class="num">' + (pos ? pos + 'º' : '—') + '</td>' +
+        '<td>' + (f.diaPix ? esc(f.diaPix) + '<span class="menor">' + esc(f.horaPix) + '</span>' : '<span class="menor">Sem PIX</span>') + '</td>' +
+        '<td>' + esc(f.nome) + '<span class="menor">' + esc([f.id, f.corretor].filter(Boolean).join(' · ')) + '</span></td>' +
+        '<td>' + esc(f.pagamento || '—') + '</td>' +
+        '<td>' + simNao(f.clienteZabaleta) + '</td>' +
+        '<td>' + simNao(f.primeiraCompra) + '</td>' +
+        '<td>' + esc(f.tamanho || '—') + '</td>' +
+        '<td><span class="selo ' + esc(f.status) + '">' + esc(NOME_STATUS[f.status] || f.status) + '</span></td>' +
+        '<td>' + (pode
+          ? '<input type="text" inputmode="numeric" maxlength="5" class="in-ordem' + (repetida ? ' dup' : '') + '" data-id="' + esc(f.id) + '" value="' + esc(f.ordemFinal) +
+            '" aria-label="Ordem final de ' + esc(f.nome) + '"' + (repetida ? ' title="Ordem repetida em outra ficha"' : '') + '>'
+          : (f.ordemFinal ? '<span class="ordem">' + esc(f.ordemFinal) + 'º</span>' : '—')) + '</td></tr>';
+    };
+    $('#linhas-fila').innerHTML = comPix.map(function (f, i) { return linha(f, i + 1); }).join('') + semPix.map(function (f) { return linha(f, 0); }).join('');
+    var vazio = $('#vazio-fila');
+    vazio.hidden = reais.length > 0;
+    vazio.textContent = 'As fichas aparecem aqui assim que forem digitadas. A fila segue a data e a hora do PIX.';
+  }
+  function ligarFilaEClientes() {
+    $('#bt-novo-atend').addEventListener('click', novoAtendimento);
+    $('#busca-cli').addEventListener('input', function (ev) { S.qCli = ev.target.value; desenharClientes(); });
+    $('#ordenar-cli').addEventListener('change', function (ev) { S.ordemCli = ev.target.value; desenharClientes(); });
+    $('#linhas-cli').addEventListener('click', function (ev) {
+      var virar = ev.target.closest('button[data-virar]');
+      if (virar) return transformarEmFicha(S.fichas.filter(function (x) { return x.id === virar.dataset.virar; })[0]);
+      var tr = ev.target.closest('tr[data-id]');
+      if (tr) abrirPainel(tr.dataset.id);
+    });
+    $('#linhas-cli').addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' && ev.target.matches('tr[data-id]')) abrirPainel(ev.target.dataset.id);
+    });
+    var aplicar = function (chamada, bt) {
+      if (bt) bt.disabled = true;
+      chamada.then(function (r) { S.fichas = r.fichas; toast(r.mensagem); atualizarTudo(); })
+        .catch(function (e) { toast(e.message, true); desenharFila(); })
+        .then(function () { if (bt) bt.disabled = false; });
+    };
+    $('#linhas-fila').addEventListener('click', function (ev) {
+      if (ev.target.closest('.in-ordem')) return;
+      var tr = ev.target.closest('tr[data-id]');
+      if (tr) abrirPainel(tr.dataset.id);
+    });
+    $('#linhas-fila').addEventListener('input', function (ev) {
+      if (ev.target.matches('.in-ordem')) ev.target.value = ev.target.value.replace(/\D/g, '').slice(0, 5);
+    });
+    $('#linhas-fila').addEventListener('change', function (ev) {
+      if (ev.target.matches('.in-ordem')) aplicar(srv('definirOrdemFinal', ev.target.dataset.id, ev.target.value));
+    });
+    $('#linhas-fila').addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' && ev.target.matches('.in-ordem')) ev.target.blur();
+    });
+    $('#bt-ordem-vazias').addEventListener('click', function (ev) { aplicar(srv('ordenarPeloPix', false), ev.currentTarget); });
+    $('#bt-ordem-tudo').addEventListener('click', function (ev) {
+      var bt = ev.currentTarget;
+      if (bt.dataset.armado !== '1') { bt.dataset.armado = '1'; bt.textContent = 'Confirmar: substituir as ordens atuais'; return; }
+      aplicar(srv('ordenarPeloPix', true), bt);
+    });
+  }
+
+  /* ---------------- Mesas: fila pela ordem final, mesas e horarios ---------------- */
   function filaAtend() {
-    return S.fichas.filter(function (f) { return f.ordemFinal && !f.diaAtend; })
+    return fichasReais().filter(function (f) { return f.ordemFinal && !f.diaAtend; })
       .sort(function (a, b) { return (+a.ordemFinal - +b.ordemFinal) || (a.id < b.id ? -1 : 1); });
   }
   function horariosDe(inicio, duracao, quantidade) {
@@ -1657,7 +1974,7 @@
     var fila = filaAtend();
     if (!fila.some(function (f) { return f.id === S.filaSel; })) S.filaSel = fila.length ? fila[0].id : null;
     var sel = fila.filter(function (f) { return f.id === S.filaSel; })[0];
-    var semOrdem = S.fichas.filter(function (f) { return !f.ordemFinal; }).length;
+    var semOrdem = fichasReais().filter(function (f) { return !f.ordemFinal; }).length;
     var marcados = S.fichas.filter(function (f) { return f.diaAtend; }).length;
 
     $('#cfg-atend').hidden = !S.usuario.admin;
@@ -1904,13 +2221,17 @@
   /* ---------------- Navegacao ---------------- */
   function irPara(aba) {
     S.aba = aba;
-    ['nova', 'fichas', 'atend', 'ind', 'usuarios'].forEach(function (a) { $('#v-' + a).hidden = a !== aba; });
+    ['clientes', 'nova', 'fichas', 'fila', 'atend', 'ind', 'usuarios'].forEach(function (a) { $('#v-' + a).hidden = a !== aba; });
+    /* O formulario no modo atendimento pertence a aba Atendimentos. */
+    var marcada = aba === 'nova' && S.modo === 'ATEND' ? 'clientes' : aba;
     Array.prototype.forEach.call(document.querySelectorAll('.abas button'), function (b) {
-      b.setAttribute('aria-selected', String(b.dataset.aba === aba));
+      b.setAttribute('aria-selected', String(b.dataset.aba === marcada));
     });
     if (aba === 'ind') desenharIndicadores();
     if (aba === 'fichas') desenharLista();
     if (aba === 'atend') desenharAtendimentos();
+    if (aba === 'clientes') desenharClientes();
+    if (aba === 'fila') desenharFila();
   }
 
   function atualizarTudo() {
@@ -1918,6 +2239,8 @@
     desenharLista();
     if (S.aba === 'ind') desenharIndicadores();
     if (S.aba === 'atend') desenharAtendimentos();
+    if (S.aba === 'clientes') desenharClientes();
+    if (S.aba === 'fila') desenharFila();
   }
 
   function recarregar(silencioso) {
@@ -1931,6 +2254,7 @@
     $('.abas').addEventListener('click', function (ev) {
       var b = ev.target.closest('button[data-aba]');
       if (!b) return;
+      if (b.dataset.aba === 'nova' && S.modo === 'ATEND') novaFicha();
       irPara(b.dataset.aba);
       if (b.dataset.aba === 'usuarios') carregarUsuarios();
       else if (b.dataset.aba !== 'nova') recarregar(true);
@@ -1956,9 +2280,13 @@
     });
     $('#form').addEventListener('change', sincronizar);
     $('#form').addEventListener('input', function () { $('#erro-form').hidden = true; });
-    $('#bt-limpar').addEventListener('click', novaFicha);
+    $('#bt-limpar').addEventListener('click', function () { if (S.modo === 'ATEND') novoAtendimento(); else novaFicha(); });
     $('#bt-sair').addEventListener('click', sair);
-    $('#bt-cancelar-edicao').addEventListener('click', function () { var id = S.editId; novaFicha(); irPara('fichas'); abrirPainel(id); });
+    $('#bt-cancelar-edicao').addEventListener('click', function () {
+      var id = S.editId;
+      var f = S.fichas.filter(function (x) { return x.id === id; })[0];
+      novaFicha(); irPara(f && ehAtend(f) ? 'clientes' : 'fichas'); abrirPainel(id);
+    });
     $('#busca').addEventListener('input', function (ev) { S.q = ev.target.value; desenharLista(); });
     $('#filtros').addEventListener('click', function (ev) {
       var b = ev.target.closest('button[data-status]'); if (!b) return;
@@ -2030,6 +2358,7 @@
       montarForm();
       ligarEventos();
       ligarAtendimentos();
+      ligarFilaEClientes();
       ligarUsuarios();
     } else {
       fecharPainel();
