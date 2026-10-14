@@ -226,6 +226,8 @@
   .fin-premissas .linha-ini { display: flex; gap: 14px; align-items: end; flex-wrap: wrap; margin-top: 14px; }
   .fin-premissas .linha-ini input { border: 1px solid var(--linha); border-radius: 8px; padding: 7px 9px; font: inherit; }
   .fin-premissas .acoes { margin-top: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .fin-nota { margin: -4px 0 14px; font-size: 13.5px; }
+  .fin-premissas select { border: 1px solid var(--linha); border-radius: 8px; padding: 7px 9px; font: inherit; background: var(--branco); max-width: 100%; }
   .fin-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .fin-tab table { min-width: 0; }
   .fin-mes table { min-width: 640px; }
@@ -614,13 +616,20 @@
       <h1>Fluxo financeiro previsto</h1>
       <p class="sub">Quanto entra na obra se cada cliente fechar a tipologia e a condição de pagamento que indicou. Conta todos assinando no mês de início do fluxo. Depois entra o que fechar de fato, por unidade.</p>
       <details class="cartao fin-premissas" id="fin-premissas"><summary>Premissas: preços e condições de pagamento</summary><div id="fin-form"></div></details>
+      <div class="barra"><span class="rot-filtro">Base do cálculo</span>
+        <div class="filtros" id="fin-visao" role="group" aria-label="Base do cálculo">
+          <button type="button" data-visao="clientes" aria-pressed="true">Clientes atuais</button>
+          <button type="button" data-visao="vgv" aria-pressed="false">VGV total pela média</button>
+        </div></div>
       <div class="barra"><span class="rot-filtro">Clientes considerados</span>
         <div class="filtros" id="fin-escopo" role="group" aria-label="Clientes considerados">
           <button type="button" data-escopo="todos" aria-pressed="true">Todos</button>
           <button type="button" data-escopo="fichas" aria-pressed="false">Só fichas</button>
           <button type="button" data-escopo="atend" aria-pressed="false">Só em atendimento</button>
         </div></div>
+      <p class="sub fin-nota" id="fin-nota"></p>
       <div class="kpis" id="fin-kpis"></div>
+      <div class="funil" id="fin-resumo"></div>
       <div class="dupla">
         <div class="cartao graf"><h3>Recebimento por mês</h3><p>Valor que entra na obra em cada mês, já sem a comissão dos corretores</p><div id="fin-g-mes"></div></div>
         <div class="cartao graf"><h3>Recebimento acumulado</h3><p>Soma desde o início do fluxo</p><div id="fin-g-acum"></div></div>
@@ -675,7 +684,7 @@
   'use strict';
 
   var S = { usuario: null, campos: [], listas: {}, fichas: [], atendimento: null, q: '', status: 'TODAS', ordem: 'recentes', editId: null, aberta: null,
-    fInd: {}, fAtd: {}, modoInd: 'processo', fin: null, finEscopo: 'todos', diaAtend: '', filaSel: null, cfgDias: [], corretores: {}, reuEdit: null, aba: 'nova',
+    fInd: {}, fAtd: {}, modoInd: 'processo', fin: null, finEscopo: 'todos', finVisao: 'clientes', diaAtend: '', filaSel: null, cfgDias: [], corretores: {}, reuEdit: null, aba: 'nova',
     modo: 'FICHA', converter: false, qCli: '', ordemCli: 'recentes' };
   var LARGOS = { nome: 1, nomeC: 1, endereco: 1, enderecoC: 1, email: 1, emailC: 1, corretor: 1, corretor2: 1, imobiliaria: 1, imobiliaria2: 1, pixCorretor: 1, pixCorretor2: 1 };
   var TOTAIS = { pagamento: 1, gerente: 1 };
@@ -1730,7 +1739,7 @@
 
   /* ---------------- Financeiro: fluxo de recebimento previsto ---------------- */
   var MESES_ABR = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-  var CAMPOS_COND = [['entrada', 'Entrada %'], ['comissao', 'Comissão do corretor %'], ['parcelas', 'Nº de parcelas'], ['pctParcelas', '% nas parcelas'], ['saldo', 'Saldo %'], ['mesesSaldo', 'Saldo: meses após a última parcela']];
+  var CAMPOS_COND = [['desconto', 'Desconto %'], ['entrada', 'Entrada %'], ['comissao', 'Comissão do corretor %'], ['parcelas', 'Nº de parcelas'], ['pctParcelas', '% nas parcelas'], ['saldo', 'Saldo %'], ['mesesSaldo', 'Saldo: meses após a última parcela']];
   function numFin(v) {
     var s = String(v == null ? '' : v).trim().replace(/\s|R\$/g, '');
     if (!s) return NaN;
@@ -1754,54 +1763,65 @@
   /* Descricao em palavras de uma condicao, para conferir a premissa. */
   function descCond(c) {
     var e = n0(c.entrada), co = n0(c.comissao), np = Math.round(n0(c.parcelas)), pp = n0(c.pctParcelas), sa = n0(c.saldo), ms = Math.round(n0(c.mesesSaldo));
-    var soma = e + pp + sa, partes = [];
+    var soma = e + pp + sa, partes = [], de = n0(c.desconto);
     if (e) partes.push(pctTxt(e) + ' de entrada' + (co ? ' (' + pctTxt(e - co) + ' líquido, depois de ' + pctTxt(co) + ' de comissão)' : ''));
     if (pp && np) partes.push(pctTxt(pp) + ' em ' + np + ' parcelas de ' + pctTxt(pp / np));
     if (sa) partes.push(pctTxt(sa) + ' de saldo no mês ' + (np + ms));
-    var txt = partes.length ? partes.join(', ') + '.' : 'Ainda sem regra: os clientes com esta condição ficam fora do cálculo.';
+    var txt = partes.length ? (de ? 'Desconto de ' + pctTxt(de) + ' no preço. Sobre o valor com desconto: ' : '') + partes.join(', ') + '.' : 'Ainda sem regra: os clientes com esta condição ficam fora do cálculo.';
     var ok = !partes.length || Math.abs(soma - 100) < 0.001;
     if (partes.length && !ok) txt += ' Soma ' + pctTxt(soma) + ', não 100%.';
     return { txt: txt, ok: ok, vazia: !partes.length };
   }
-  /* Fluxo de um cliente: lista de { mes, tipo, valor } e a comissao. */
-  function fluxoCliente(preco, c) {
+  /* Fluxo de um cliente: lista de { mes, tipo, valor }, a comissao e o desconto. Percentuais sobre o preco ja com desconto. */
+  function fluxoCliente(tabela, c) {
+    var preco = tabela * (1 - n0(c.desconto) / 100);
     var np = Math.round(n0(c.parcelas)), ms = Math.round(n0(c.mesesSaldo));
     var l = [];
     var ent = preco * (n0(c.entrada) - n0(c.comissao)) / 100;
     if (ent) l.push({ mes: 0, tipo: 'e', v: ent });
     if (np > 0 && n0(c.pctParcelas)) for (var i = 1; i <= np; i++) l.push({ mes: i, tipo: 'p', v: preco * n0(c.pctParcelas) / 100 / np });
     if (n0(c.saldo)) l.push({ mes: np + ms, tipo: 's', v: preco * n0(c.saldo) / 100 });
-    return { itens: l, comissao: preco * n0(c.comissao) / 100 };
+    return { itens: l, comissao: preco * n0(c.comissao) / 100, valor: preco, desconto: tabela - preco };
   }
   function calcularFluxo() {
     var fin = S.fin, esc0 = S.finEscopo;
     var base = S.fichas.filter(function (f) { return esc0 === 'todos' ? true : (esc0 === 'atend' ? ehAtend(f) : !ehAtend(f)); });
-    var meses = [], fora = [], porCond = {}, porTip = {}, vgv = 0, comissao = 0, dentro = 0;
+    var meses = [], fora = [], porCond = {}, porTip = {}, vgv = 0, tabela = 0, descontos = 0, comissao = 0, dentro = 0, semCond = 0;
     base.forEach(function (f) {
       var motivo = '';
-      var c = fin.condicoes[f.pagamento];
+      var cond = f.pagamento || fin.condPadrao;
+      var c = fin.condicoes[cond];
       var preco = numFin(fin.precos[f.tamanho]);
       if (!f.tamanho) motivo = 'Sem tamanho do apto';
-      else if (!f.pagamento) motivo = 'Sem condição de pagamento';
+      else if (!cond) motivo = 'Sem condição de pagamento';
       else if (!(preco > 0)) motivo = 'Tipologia ' + f.tamanho + ' sem preço nas premissas';
-      else if (!c || descCond(c).vazia) motivo = 'Condição ' + f.pagamento + ' sem regra nas premissas';
+      else if (!c || descCond(c).vazia) motivo = 'Condição ' + cond + ' sem regra nas premissas';
       if (motivo) { fora.push({ f: f, motivo: motivo }); return; }
       dentro++;
+      if (!f.pagamento) semCond++;
       var fl = fluxoCliente(preco, c);
-      vgv += preco; comissao += fl.comissao;
+      tabela += preco; vgv += fl.valor; descontos += fl.desconto; comissao += fl.comissao;
       var liq = 0;
       fl.itens.forEach(function (it) {
         while (meses.length <= it.mes) meses.push({ e: 0, p: 0, s: 0 });
         meses[it.mes][it.tipo] += it.v; liq += it.v;
       });
-      [[porCond, f.pagamento], [porTip, f.tamanho]].forEach(function (x) {
+      [[porCond, cond], [porTip, f.tamanho]].forEach(function (x) {
         var g = x[0][x[1]] = x[0][x[1]] || { n: 0, vgv: 0, liq: 0 };
-        g.n++; g.vgv += preco; g.liq += liq;
+        g.n++; g.vgv += fl.valor; g.liq += liq;
       });
     });
+    /* Projecao do VGV total: o fluxo dos clientes, na proporcao de cada condicao, levado ao VGV de tabela do empreendimento. */
+    var k = 1, vgvTotal = numFin(fin.vgvTotal);
+    if (S.finVisao === 'vgv') {
+      k = tabela > 0 && vgvTotal > 0 ? vgvTotal / tabela : 0;
+      meses.forEach(function (m) { m.e *= k; m.p *= k; m.s *= k; });
+      [porCond, porTip].forEach(function (g) { Object.keys(g).forEach(function (x) { g[x].vgv *= k; g[x].liq *= k; }); });
+    }
     var acum = 0;
     meses.forEach(function (m) { m.t = m.e + m.p + m.s; acum += m.t; m.a = acum; });
-    return { base: base, meses: meses, fora: fora, porCond: porCond, porTip: porTip, vgv: vgv, comissao: comissao, liq: acum, dentro: dentro };
+    return { base: base, meses: meses, fora: fora, porCond: porCond, porTip: porTip, vgv: vgv * k, tabela: tabela * k, descontos: descontos * k,
+      comissao: comissao * k, liq: acum, dentro: dentro, semCond: semCond, k: k, vgvTotal: vgvTotal, tabelaClientes: tabela };
   }
 
   function desenharFinanceiro(primeira) {
@@ -1811,39 +1831,57 @@
       $('#fin-premissas').open = !S.fin.salvo || !Object.keys(S.fin.precos).some(function (k) { return numFin(S.fin.precos[k]) > 0; });
     }
     Array.prototype.forEach.call(document.querySelectorAll('#fin-escopo [data-escopo]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.escopo === S.finEscopo)); });
-    var r = calcularFluxo(), ini = S.fin.inicio;
-    var ultimo = -1;
-    r.meses.forEach(function (m, i) { if (m.t) ultimo = i; });
-    $('#fin-kpis').innerHTML = [
-      ['Valor de vendas previsto', r.dentro ? reaisCurto(r.vgv) : '—', true, reais(r.vgv)],
-      ['Entra na obra', r.dentro ? reaisCurto(r.liq) : '—', false, reais(r.liq)],
-      ['Comissão de corretores', r.dentro ? reaisCurto(r.comissao) : '—', false, reais(r.comissao)],
-      ['Clientes no cálculo', r.dentro],
-      ['Fora do cálculo', r.fora.length],
-      ['Último recebimento', ultimo >= 0 ? mesRotulo(ini, ultimo) : '—']
-    ].map(function (x) {
+    Array.prototype.forEach.call(document.querySelectorAll('#fin-visao [data-visao]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.visao === S.finVisao)); });
+    var r = calcularFluxo(), ini = S.fin.inicio, vgvMode = S.finVisao === 'vgv';
+    var ok = r.dentro && (!vgvMode || r.k > 0);
+    var nota = [];
+    if (vgvMode) nota.push(r.k > 0 ? 'Projeção do VGV de tabela de ' + reais(r.vgvTotal) + ', distribuído na mesma proporção de condições e descontos dos ' + r.dentro +
+      (r.dentro === 1 ? ' cliente' : ' clientes') + ' no cálculo (eles somam ' + reais(r.tabelaClientes) + ' de tabela).' : 'Para projetar o VGV total, preencha o VGV nas premissas e tenha clientes com tipologia e preço.');
+    if (r.semCond) nota.push(r.semCond + (r.semCond === 1 ? ' cliente sem condição de pagamento foi contado' : ' clientes sem condição de pagamento foram contados') + ' como ' + rotuloOpcao(S.fin.condPadrao) + '.');
+    $('#fin-nota').textContent = nota.join(' ');
+    $('#fin-nota').hidden = !nota.length;
+    var kpi = function (l) { return l.map(function (x) {
       return '<div class="cartao kpi' + (x[2] ? ' destaque' : '') + '"' + (x[3] ? ' title="' + esc(x[3]) + '"' : '') + '><div class="n">' + x[1] + '</div><div class="r">' + x[0] + '</div></div>';
-    }).join('');
-    var serie = r.meses.map(function (m, i) { return { r: mesRotulo(ini, i), v: m.t, a: m.a }; });
+    }).join(''); };
+    var dinheiro = function (v) { return ok ? reaisCurto(v) : '—'; };
+    $('#fin-kpis').innerHTML = kpi([
+      [vgvMode ? 'VGV de tabela' : 'Valor de tabela', dinheiro(r.tabela), false, reais(r.tabela)],
+      ['Valor de vendas, com descontos', dinheiro(r.vgv), true, reais(r.vgv)],
+      ['Descontos', dinheiro(r.descontos), false, reais(r.descontos)],
+      ['Comissão de corretores', dinheiro(r.comissao), false, reais(r.comissao)],
+      ['Entra na obra', dinheiro(r.liq), false, reais(r.liq)],
+      [vgvMode ? 'Clientes na média' : 'Clientes no cálculo', r.dentro + (r.fora.length ? ' de ' + (r.dentro + r.fora.length) : '')]
+    ]);
+    var comParcela = r.meses.filter(function (m, i) { return i > 0 && m.p > 0; });
+    var saldoTot = r.meses.reduce(function (a, m) { return a + m.s; }, 0);
+    var mesesSaldo = r.meses.map(function (m, i) { return m.s ? mesRotulo(ini, i) : ''; }).filter(Boolean);
+    $('#fin-resumo').innerHTML = kpi([
+      ['Entrada líquida, no ' + (r.meses.length ? mesRotulo(ini, 0) : 'mês 0'), ok && r.meses.length ? reaisCurto(r.meses[0].e) : '—', false, r.meses.length ? reais(r.meses[0].e) : ''],
+      ['Parcelas por mês, em média (' + comParcela.length + ' meses)', ok && comParcela.length ? reaisCurto(comParcela.reduce(function (a, m) { return a + m.p; }, 0) / comParcela.length) : '—'],
+      ['Saldo' + (mesesSaldo.length ? ' (' + (mesesSaldo.length > 2 ? mesesSaldo[0] + ' a ' + mesesSaldo[mesesSaldo.length - 1] : mesesSaldo.join(' e ')) + ')' : ''), ok && saldoTot ? reaisCurto(saldoTot) : '—', false, reais(saldoTot)],
+      ['Último recebimento', ok && r.meses.length ? mesRotulo(ini, r.meses.length - 1) : '—']
+    ]);
+    var serie = ok ? r.meses.map(function (m, i) { return { r: mesRotulo(ini, i), v: m.t, a: m.a }; }) : [];
     $('#fin-g-mes').innerHTML = serie.length ? graficoValor(serie, larguraDe('#fin-g-mes'), 'v') : '<p>Sem clientes no cálculo. Preencha as premissas e os dados dos clientes.</p>';
     $('#fin-g-acum').innerHTML = serie.length ? graficoValor(serie, larguraDe('#fin-g-acum'), 'a') : '<p>Sem clientes no cálculo.</p>';
     var tabGrupo = function (g, ordem, rot) {
       var ks = ordem.filter(function (k) { return g[k]; }).concat(Object.keys(g).filter(function (k) { return ordem.indexOf(k) < 0; }));
       if (!ks.length) return '<p style="padding:0 20px 16px">Sem clientes no cálculo.</p>';
       var tot = { n: 0, vgv: 0, liq: 0 };
-      return '<table><thead><tr><th>' + rot + '</th><th class="fin-num">Clientes</th><th class="fin-num">Valor de vendas</th><th class="fin-num">Entra na obra</th></tr></thead><tbody>' +
-        ks.map(function (k) { tot.n += g[k].n; tot.vgv += g[k].vgv; tot.liq += g[k].liq;
-          return '<tr><td>' + esc(rotuloOpcao(k)) + '</td><td class="fin-num">' + g[k].n + '</td><td class="fin-num">' + reais(g[k].vgv) + '</td><td class="fin-num">' + reais(g[k].liq) + '</td></tr>'; }).join('') +
-        '</tbody><tfoot><tr><td>Total</td><td class="fin-num">' + tot.n + '</td><td class="fin-num">' + reais(tot.vgv) + '</td><td class="fin-num">' + reais(tot.liq) + '</td></tr></tfoot></table>';
+      ks.forEach(function (k) { tot.n += g[k].n; tot.vgv += g[k].vgv; tot.liq += g[k].liq; });
+      return '<table><thead><tr><th>' + rot + '</th><th class="fin-num">Clientes</th><th class="fin-num">Participação</th><th class="fin-num">Valor de vendas</th><th class="fin-num">Entra na obra</th></tr></thead><tbody>' +
+        ks.map(function (k) {
+          return '<tr><td>' + esc(rotuloOpcao(k)) + '</td><td class="fin-num">' + g[k].n + '</td><td class="fin-num">' + (tot.vgv ? Math.round(g[k].vgv / tot.vgv * 100) : 0) + '%</td><td class="fin-num">' + reais(g[k].vgv) + '</td><td class="fin-num">' + reais(g[k].liq) + '</td></tr>'; }).join('') +
+        '</tbody><tfoot><tr><td>Total</td><td class="fin-num">' + tot.n + '</td><td class="fin-num">100%</td><td class="fin-num">' + reais(tot.vgv) + '</td><td class="fin-num">' + reais(tot.liq) + '</td></tr></tfoot></table>';
     };
     $('#fin-por-cond').innerHTML = tabGrupo(r.porCond, (S.listas['CONDIÇÕES DE PAGAMENTO'] || []).slice(), 'Condição');
     $('#fin-por-tip').innerHTML = tabGrupo(r.porTip, (S.listas['TAMANHO APTO'] || []).slice(), 'Tipologia');
-    $('#fin-mes').innerHTML = r.meses.length ? '<table><thead><tr><th>Mês</th><th class="fin-num">Nº</th><th class="fin-num">Entradas (líquidas)</th><th class="fin-num">Parcelas</th><th class="fin-num">Saldo</th><th class="fin-num">Total no mês</th><th class="fin-num">Acumulado</th></tr></thead><tbody>' +
+    $('#fin-mes').innerHTML = ok && r.meses.length ? '<table><thead><tr><th>Mês</th><th class="fin-num">Nº</th><th class="fin-num">Entradas (líquidas)</th><th class="fin-num">Parcelas</th><th class="fin-num">Saldo</th><th class="fin-num">Total no mês</th><th class="fin-num">Acumulado</th></tr></thead><tbody>' +
       r.meses.map(function (m, i) {
         return '<tr' + (m.t ? '' : ' class="zero"') + '><td>' + mesRotulo(ini, i) + '</td><td class="fin-num">' + i + '</td><td class="fin-num">' + (m.e ? reais(m.e) : '—') + '</td><td class="fin-num">' + (m.p ? reais(m.p) : '—') +
           '</td><td class="fin-num">' + (m.s ? reais(m.s) : '—') + '</td><td class="fin-num"><b>' + reais(m.t) + '</b></td><td class="fin-num">' + reais(m.a) + '</td></tr>';
       }).join('') + '</tbody></table>' : '<p style="padding:0 20px 16px">Sem clientes no cálculo.</p>';
-    $('#fin-csv').disabled = !r.meses.length;
+    $('#fin-csv').disabled = !ok || !r.meses.length;
     $('#fin-fora-cx').hidden = !r.fora.length;
     $('#fin-fora').innerHTML = r.fora.length ? '<table><thead><tr><th>Cliente</th><th>Situação</th><th>Motivo</th></tr></thead><tbody>' + r.fora.map(function (x) {
       return '<tr data-id="' + esc(x.f.id) + '"><td>' + esc(x.f.nome) + '<span class="menor">' + esc(x.f.id) + '</span></td><td>' + esc(NOME_STATUS[x.f.status] || x.f.status) + '</td><td>' + esc(x.motivo) + '</td></tr>';
@@ -1855,7 +1893,7 @@
   function graficoValor(serie, W, chave) {
     var H = 220, m = { e: 64, d: 10, t: 16, b: 24 };
     var max = Math.max.apply(null, serie.map(function (p) { return p[chave]; }).concat([1]));
-    var mag = Math.pow(10, Math.floor(Math.log10(max))), passo = [1, 2, 2.5, 5, 10].map(function (k) { return k * mag; }).filter(function (s) { return max / s <= 4; })[0] || mag * 10;
+    var mag = Math.pow(10, Math.floor(Math.log10(max / 4))), passo = [1, 2, 2.5, 5, 10].map(function (k) { return k * mag; }).filter(function (s) { return max / s <= 4; })[0] || mag * 10;
     var topo = Math.ceil(max / passo) * passo, aw = W - m.e - m.d, ah = H - m.t - m.b;
     var py = function (v) { return m.t + ah - v / topo * ah; };
     var g = '';
@@ -1876,11 +1914,16 @@
     Object.keys(fin.precos).forEach(function (k) { if (tips.indexOf(k) < 0) tips.push(k); });
     var conds = (S.listas['CONDIÇÕES DE PAGAMENTO'] || []).slice();
     Object.keys(fin.condicoes).forEach(function (k) { if (conds.indexOf(k) < 0) conds.push(k); });
-    var fmtPreco = function (v) { var n = numFin(v); return n > 0 ? Math.round(n).toLocaleString('pt-BR') : ''; };
+    var fmtPreco = function (v) { var n = numFin(v); return n > 0 ? n.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : ''; };
     var fmt = function (v) { var n = numFin(v); return isFinite(n) ? String(n).replace('.', ',') : ''; };
     $('#fin-form').innerHTML =
       '<div class="linha-ini"><div><label class="rot" for="fin-inicio" style="display:block;font-size:12.5px;color:var(--suave);margin-bottom:5px">Início do fluxo (mês da assinatura)</label>' +
       '<input type="month" id="fin-inicio" value="' + esc(fin.inicio) + '"' + dis + '></div>' +
+      '<div><label class="rot" for="fin-vgv" style="display:block;font-size:12.5px;color:var(--suave);margin-bottom:5px">VGV total do empreendimento, de tabela (R$)</label>' +
+      '<input type="text" inputmode="decimal" id="fin-vgv" value="' + fmtPreco(fin.vgvTotal) + '" placeholder="130.000.000"' + dis + '></div>' +
+      '<div><label class="rot" for="fin-padrao" style="display:block;font-size:12.5px;color:var(--suave);margin-bottom:5px">Cliente sem condição de pagamento conta como</label>' +
+      '<select id="fin-padrao"' + dis + '><option value="">Fica fora do cálculo</option>' + conds.map(function (k) {
+        return '<option value="' + esc(k) + '"' + (k === fin.condPadrao ? ' selected' : '') + '>' + esc(k) + '</option>'; }).join('') + '</select></div>' +
       '<span class="menor">Mês 0 = entrada. Parcelas a partir do mês 1.</span></div>' +
       '<h3>Preço de cada tipologia (valor da unidade, em R$)</h3><div class="tabela-rolo"><table class="t-preco"><thead><tr><th>Tipologia</th><th class="fin-num">Preço (R$)</th></tr></thead><tbody>' +
       tips.map(function (k) {
@@ -1892,13 +1935,13 @@
         var c = fin.condicoes[k] || {}, d = descCond(c);
         return '<tr data-cond="' + esc(k) + '"><td>' + esc(k) + '</td>' + CAMPOS_COND.map(function (x) {
           return '<td><input type="text" inputmode="decimal" data-campo="' + x[0] + '" value="' + fmt(c[x[0]]) + '" placeholder="0" aria-label="' + esc(k + ': ' + x[1]) + '"' + dis + '></td>';
-        }).join('') + '</tr><tr><td colspan="7" class="desc' + (d.ok ? '' : ' aviso') + '" data-desc="' + esc(k) + '">' + esc(d.txt) + '</td></tr>';
+        }).join('') + '</tr><tr><td colspan="8" class="desc' + (d.ok ? '' : ' aviso') + '" data-desc="' + esc(k) + '">' + esc(d.txt) + '</td></tr>';
       }).join('') + '</tbody></table></div>' +
       '<div class="acoes">' + (pode ? '<button type="button" class="bt pri" id="fin-salvar">Salvar premissas</button><span class="menor">Fica guardado na aba FINANCEIRO da planilha.</span>'
         : '<span class="menor">Só administradores alteram as premissas.</span>') + '</div>';
   }
   function lerFormFinanceiro() {
-    var d = { inicio: $('#fin-inicio').value, precos: {}, condicoes: {} };
+    var d = { inicio: $('#fin-inicio').value, vgvTotal: $('#fin-vgv').value.trim(), condPadrao: $('#fin-padrao').value, precos: {}, condicoes: {} };
     Array.prototype.forEach.call(document.querySelectorAll('#fin-form [data-preco]'), function (el) { d.precos[el.dataset.preco] = el.value.trim(); });
     Array.prototype.forEach.call(document.querySelectorAll('#fin-form tr[data-cond]'), function (tr) {
       var c = {};
@@ -1914,7 +1957,7 @@
       return [mesRotulo(S.fin.inicio, i), i, num(m.e), num(m.p), num(m.s), num(m.t), num(m.a)].join(';');
     }));
     var blob = new Blob(['\ufeff' + l.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fluxo-previsto-milano.csv';
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = S.finVisao === 'vgv' ? 'fluxo-vgv-total-milano.csv' : 'fluxo-previsto-milano.csv';
     document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   }
 
@@ -3007,6 +3050,10 @@
       S.finEscopo = b.dataset.escopo; desenharFinanceiro();
     });
     $('#fin-csv').addEventListener('click', baixarCsvFluxo);
+    $('#fin-visao').addEventListener('click', function (ev) {
+      var b = ev.target.closest('button[data-visao]'); if (!b) return;
+      S.finVisao = b.dataset.visao; desenharFinanceiro();
+    });
     $('#fin-fora').addEventListener('click', function (ev) { var tr = ev.target.closest('tr[data-id]'); if (tr) abrirPainel(tr.dataset.id); });
     $('#fin-form').addEventListener('input', function (ev) {
       var tr = ev.target.closest('tr[data-cond]'); if (!tr) return;
