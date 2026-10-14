@@ -208,6 +208,35 @@
   .kpi.destaque .n { color: var(--marca); }
   .kpi.destaque { box-shadow: var(--sombra), inset 0 3px 0 var(--ouro); }
   .modo-ind { margin: 2px 0 14px; }
+  .sec-ind { font-size: 15px; font-weight: 600; margin: 22px 0 4px; }
+  .sec-ind + .sub { margin-bottom: 12px; font-size: 13.5px; }
+  #vontades { margin-bottom: 16px; }
+  .fin-premissas { padding: 14px 20px; margin-bottom: 16px; }
+  .fin-premissas summary { cursor: pointer; font-weight: 600; }
+  .fin-premissas h3 { font-size: 13.5px; margin: 18px 0 8px; }
+  .fin-premissas .tabela-rolo table { min-width: 0; }
+  .fin-premissas td, .fin-premissas th { padding: 6px 8px; vertical-align: middle; }
+  .fin-premissas td input { width: 100%; min-width: 64px; border: 1px solid var(--linha); border-radius: 8px; padding: 7px 9px; font: inherit; font-variant-numeric: tabular-nums; text-align: right; }
+  .fin-premissas td input:focus { outline: 0; border-color: var(--marca); box-shadow: 0 0 0 3px rgba(64,9,9,.14); }
+  .fin-premissas td input:disabled { background: #F5F5F7; color: var(--tinta); }
+  .fin-premissas .t-cond { min-width: 860px; }
+  .fin-premissas .t-preco { max-width: 420px; }
+  .fin-premissas .desc { font-size: 12px; color: var(--suave); padding-top: 0; border-bottom: 1px solid var(--linha); }
+  .fin-premissas .desc.aviso, .fin-aviso { color: var(--pend-t); }
+  .fin-premissas .linha-ini { display: flex; gap: 14px; align-items: end; flex-wrap: wrap; margin-top: 14px; }
+  .fin-premissas .linha-ini input { border: 1px solid var(--linha); border-radius: 8px; padding: 7px 9px; font: inherit; }
+  .fin-premissas .acoes { margin-top: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .fin-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .fin-tab table { min-width: 0; }
+  .fin-mes table { min-width: 640px; }
+  #fin-kpis .kpi .n { font-size: 26px; white-space: nowrap; }
+  .fin-tab td, .fin-tab th { padding: 8px 12px; }
+  .fin-tab tr.zero td { color: #A1A1A6; }
+  .fin-tab tfoot td { font-weight: 600; border-top: 1px solid var(--linha); }
+  .fin-mes { max-height: 460px; overflow: auto; }
+  .fin-mes thead th { position: sticky; top: 0; background: var(--branco); }
+  .fin-topo { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 16px 20px 6px; }
+  .fin-topo h3 { margin: 0; font-size: 15px; }
   .conv .lb .topo-b span:last-child { white-space: nowrap; }
   .dupla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
   .tripla { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -414,6 +443,7 @@
         <button role="tab" data-aba="fila" aria-selected="false">Fila</button>
         <button role="tab" data-aba="atend" aria-selected="false">Mesas</button>
         <button role="tab" data-aba="ind" aria-selected="false">Indicadores</button>
+        <button role="tab" data-aba="fin" aria-selected="false" id="aba-fin" hidden>Financeiro</button>
         <button role="tab" data-aba="usuarios" aria-selected="false" id="aba-usuarios" hidden>Usuários</button>
       </nav>
       <div class="usuario"><b id="u-papel"></b><span id="u-email"></span></div>
@@ -552,8 +582,9 @@
     <section id="v-ind" hidden>
       <h1>Indicadores do lançamento</h1>
       <div class="filtros modo-ind" id="modo-ind" role="group" aria-label="Quais indicadores mostrar">
-        <button type="button" data-modo="processo" aria-pressed="true">Processo completo</button>
         <button type="button" data-modo="atend" aria-pressed="false">Atendimentos</button>
+        <button type="button" data-modo="fichas" aria-pressed="false">Fichas</button>
+        <button type="button" data-modo="processo" aria-pressed="true">Processo completo</button>
       </div>
       <p class="sub" id="sub-ind"></p>
       <div class="kpis" id="kpis"></div>
@@ -562,10 +593,13 @@
         <div class="cartao graf conv"><h3>Conversão por temperatura</h3><p>Quanto de cada temperatura (último contato) já virou ficha, nos atendimentos do filtro</p><div id="g-conv-temp"></div></div>
         <div class="cartao graf conv"><h3>Conversão por gerente ou sócio</h3><p>Quanto dos atendimentos de cada um já virou ficha, nos atendimentos do filtro</p><div id="g-conv-ger"></div></div>
       </div>
+      <div id="vontades-cx" hidden><h2 class="sec-ind">O que querem os clientes em atendimento</h2>
+        <p class="sub" id="vontades-sub"></p><div class="tripla" id="vontades"></div></div>
       <div class="dupla" id="topo-proc">
         <div class="cartao graf"><h3>Funil do lançamento</h3><p>Do primeiro atendimento à mesa. Cada etapa conta quem passou pelas anteriores. Mostra sempre o total.</p><div id="g-funil"></div></div>
         <div class="cartao graf"><h3>Clientes por gerente ou sócio</h3><p>Quem atendeu cada cliente registrado. Mostra sempre o total.</p><div id="g-gerentes"></div></div>
       </div>
+      <h2 class="sec-ind" id="titulo-detalhe" hidden></h2>
       <div class="barra" id="filtros-ind"></div>
       <div class="dupla">
         <div class="cartao graf"><h3 id="t-dia">Fichas por dia</h3><p id="p-dia">Pela data de recebimento. Clique em um dia para filtrar.</p><div id="g-dia"></div></div>
@@ -573,6 +607,31 @@
       </div>
       <div class="graficos" id="graficos"></div>
       <div class="tripla" id="quebras"></div>
+    </section>
+
+    <!-- Financeiro: fluxo de recebimento previsto (aprovadores e administradores) -->
+    <section id="v-fin" hidden>
+      <h1>Fluxo financeiro previsto</h1>
+      <p class="sub">Quanto entra na obra se cada cliente fechar a tipologia e a condição de pagamento que indicou. Conta todos assinando no mês de início do fluxo. Depois entra o que fechar de fato, por unidade.</p>
+      <details class="cartao fin-premissas" id="fin-premissas"><summary>Premissas: preços e condições de pagamento</summary><div id="fin-form"></div></details>
+      <div class="barra"><span class="rot-filtro">Clientes considerados</span>
+        <div class="filtros" id="fin-escopo" role="group" aria-label="Clientes considerados">
+          <button type="button" data-escopo="todos" aria-pressed="true">Todos</button>
+          <button type="button" data-escopo="fichas" aria-pressed="false">Só fichas</button>
+          <button type="button" data-escopo="atend" aria-pressed="false">Só em atendimento</button>
+        </div></div>
+      <div class="kpis" id="fin-kpis"></div>
+      <div class="dupla">
+        <div class="cartao graf"><h3>Recebimento por mês</h3><p>Valor que entra na obra em cada mês, já sem a comissão dos corretores</p><div id="fin-g-mes"></div></div>
+        <div class="cartao graf"><h3>Recebimento acumulado</h3><p>Soma desde o início do fluxo</p><div id="fin-g-acum"></div></div>
+      </div>
+      <div class="dupla">
+        <div class="cartao fin-tab"><div class="fin-topo"><h3>Por condição de pagamento</h3></div><div class="tabela-rolo" id="fin-por-cond"></div></div>
+        <div class="cartao fin-tab"><div class="fin-topo"><h3>Por tipologia</h3></div><div class="tabela-rolo" id="fin-por-tip"></div></div>
+      </div>
+      <div class="cartao fin-tab" style="margin-bottom:12px"><div class="fin-topo"><h3>Mês a mês</h3><button type="button" class="bt mini" id="fin-csv">Baixar planilha (CSV)</button></div>
+        <div class="tabela-rolo fin-mes" id="fin-mes"></div></div>
+      <div class="cartao fin-tab" id="fin-fora-cx"><div class="fin-topo"><h3>Clientes fora do cálculo</h3></div><div class="tabela-rolo" id="fin-fora"></div></div>
     </section>
 
     <!-- Usuarios (so administradores) -->
@@ -588,7 +647,7 @@
       <div class="cartao">
         <div class="tabela-rolo">
           <table class="t-usuarios">
-            <thead><tr><th>Pessoa</th><th>O que pode fazer</th><th>Acesso</th><th>Última alteração</th></tr></thead>
+            <thead><tr><th>Pessoa</th><th>O que pode fazer</th><th>Acesso</th><th>Financeiro</th><th>Última alteração</th></tr></thead>
             <tbody id="linhas-usuarios"></tbody>
           </table>
         </div>
@@ -616,7 +675,7 @@
   'use strict';
 
   var S = { usuario: null, campos: [], listas: {}, fichas: [], atendimento: null, q: '', status: 'TODAS', ordem: 'recentes', editId: null, aberta: null,
-    fInd: {}, fAtd: {}, modoInd: 'processo', diaAtend: '', filaSel: null, cfgDias: [], corretores: {}, reuEdit: null, aba: 'nova',
+    fInd: {}, fAtd: {}, modoInd: 'processo', fin: null, finEscopo: 'todos', diaAtend: '', filaSel: null, cfgDias: [], corretores: {}, reuEdit: null, aba: 'nova',
     modo: 'FICHA', converter: false, qCli: '', ordemCli: 'recentes' };
   var LARGOS = { nome: 1, nomeC: 1, endereco: 1, enderecoC: 1, email: 1, emailC: 1, corretor: 1, corretor2: 1, imobiliaria: 1, imobiliaria2: 1, pixCorretor: 1, pixCorretor2: 1 };
   var TOTAIS = { pagamento: 1, gerente: 1 };
@@ -1669,6 +1728,196 @@
     }).catch(function (e) { toast(e.message, true); bt.disabled = false; });
   }
 
+  /* ---------------- Financeiro: fluxo de recebimento previsto ---------------- */
+  var MESES_ABR = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  var CAMPOS_COND = [['entrada', 'Entrada %'], ['comissao', 'Comissão do corretor %'], ['parcelas', 'Nº de parcelas'], ['pctParcelas', '% nas parcelas'], ['saldo', 'Saldo %'], ['mesesSaldo', 'Saldo: meses após a última parcela']];
+  function numFin(v) {
+    var s = String(v == null ? '' : v).trim().replace(/\s|R\$/g, '');
+    if (!s) return NaN;
+    if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '');
+    return Number(s.replace(',', '.'));
+  }
+  function n0(v) { var n = numFin(v); return isFinite(n) ? n : 0; }
+  function reais(v) { return 'R$ ' + Math.round(v).toLocaleString('pt-BR'); }
+  function reaisCurto(v) {
+    var a = Math.abs(v);
+    if (a >= 1e6) return 'R$ ' + (v / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mi';
+    if (a >= 1e3) return 'R$ ' + (v / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + ' mil';
+    return 'R$ ' + Math.round(v);
+  }
+  function pctTxt(v) { return (Math.round(v * 100) / 100).toLocaleString('pt-BR') + '%'; }
+  function mesRotulo(inicio, i) {
+    var a = +inicio.slice(0, 4), m = +inicio.slice(5, 7) - 1 + i;
+    a += Math.floor(m / 12); m = ((m % 12) + 12) % 12;
+    return MESES_ABR[m] + '/' + String(a).slice(2);
+  }
+  /* Descricao em palavras de uma condicao, para conferir a premissa. */
+  function descCond(c) {
+    var e = n0(c.entrada), co = n0(c.comissao), np = Math.round(n0(c.parcelas)), pp = n0(c.pctParcelas), sa = n0(c.saldo), ms = Math.round(n0(c.mesesSaldo));
+    var soma = e + pp + sa, partes = [];
+    if (e) partes.push(pctTxt(e) + ' de entrada' + (co ? ' (' + pctTxt(e - co) + ' líquido, depois de ' + pctTxt(co) + ' de comissão)' : ''));
+    if (pp && np) partes.push(pctTxt(pp) + ' em ' + np + ' parcelas de ' + pctTxt(pp / np));
+    if (sa) partes.push(pctTxt(sa) + ' de saldo no mês ' + (np + ms));
+    var txt = partes.length ? partes.join(', ') + '.' : 'Ainda sem regra: os clientes com esta condição ficam fora do cálculo.';
+    var ok = !partes.length || Math.abs(soma - 100) < 0.001;
+    if (partes.length && !ok) txt += ' Soma ' + pctTxt(soma) + ', não 100%.';
+    return { txt: txt, ok: ok, vazia: !partes.length };
+  }
+  /* Fluxo de um cliente: lista de { mes, tipo, valor } e a comissao. */
+  function fluxoCliente(preco, c) {
+    var np = Math.round(n0(c.parcelas)), ms = Math.round(n0(c.mesesSaldo));
+    var l = [];
+    var ent = preco * (n0(c.entrada) - n0(c.comissao)) / 100;
+    if (ent) l.push({ mes: 0, tipo: 'e', v: ent });
+    if (np > 0 && n0(c.pctParcelas)) for (var i = 1; i <= np; i++) l.push({ mes: i, tipo: 'p', v: preco * n0(c.pctParcelas) / 100 / np });
+    if (n0(c.saldo)) l.push({ mes: np + ms, tipo: 's', v: preco * n0(c.saldo) / 100 });
+    return { itens: l, comissao: preco * n0(c.comissao) / 100 };
+  }
+  function calcularFluxo() {
+    var fin = S.fin, esc0 = S.finEscopo;
+    var base = S.fichas.filter(function (f) { return esc0 === 'todos' ? true : (esc0 === 'atend' ? ehAtend(f) : !ehAtend(f)); });
+    var meses = [], fora = [], porCond = {}, porTip = {}, vgv = 0, comissao = 0, dentro = 0;
+    base.forEach(function (f) {
+      var motivo = '';
+      var c = fin.condicoes[f.pagamento];
+      var preco = numFin(fin.precos[f.tamanho]);
+      if (!f.tamanho) motivo = 'Sem tamanho do apto';
+      else if (!f.pagamento) motivo = 'Sem condição de pagamento';
+      else if (!(preco > 0)) motivo = 'Tipologia ' + f.tamanho + ' sem preço nas premissas';
+      else if (!c || descCond(c).vazia) motivo = 'Condição ' + f.pagamento + ' sem regra nas premissas';
+      if (motivo) { fora.push({ f: f, motivo: motivo }); return; }
+      dentro++;
+      var fl = fluxoCliente(preco, c);
+      vgv += preco; comissao += fl.comissao;
+      var liq = 0;
+      fl.itens.forEach(function (it) {
+        while (meses.length <= it.mes) meses.push({ e: 0, p: 0, s: 0 });
+        meses[it.mes][it.tipo] += it.v; liq += it.v;
+      });
+      [[porCond, f.pagamento], [porTip, f.tamanho]].forEach(function (x) {
+        var g = x[0][x[1]] = x[0][x[1]] || { n: 0, vgv: 0, liq: 0 };
+        g.n++; g.vgv += preco; g.liq += liq;
+      });
+    });
+    var acum = 0;
+    meses.forEach(function (m) { m.t = m.e + m.p + m.s; acum += m.t; m.a = acum; });
+    return { base: base, meses: meses, fora: fora, porCond: porCond, porTip: porTip, vgv: vgv, comissao: comissao, liq: acum, dentro: dentro };
+  }
+
+  function desenharFinanceiro(primeira) {
+    if (!S.fin) return;
+    if (primeira) {
+      formFinanceiro();
+      $('#fin-premissas').open = !S.fin.salvo || !Object.keys(S.fin.precos).some(function (k) { return numFin(S.fin.precos[k]) > 0; });
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('#fin-escopo [data-escopo]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.escopo === S.finEscopo)); });
+    var r = calcularFluxo(), ini = S.fin.inicio;
+    var ultimo = -1;
+    r.meses.forEach(function (m, i) { if (m.t) ultimo = i; });
+    $('#fin-kpis').innerHTML = [
+      ['Valor de vendas previsto', r.dentro ? reaisCurto(r.vgv) : '—', true, reais(r.vgv)],
+      ['Entra na obra', r.dentro ? reaisCurto(r.liq) : '—', false, reais(r.liq)],
+      ['Comissão de corretores', r.dentro ? reaisCurto(r.comissao) : '—', false, reais(r.comissao)],
+      ['Clientes no cálculo', r.dentro],
+      ['Fora do cálculo', r.fora.length],
+      ['Último recebimento', ultimo >= 0 ? mesRotulo(ini, ultimo) : '—']
+    ].map(function (x) {
+      return '<div class="cartao kpi' + (x[2] ? ' destaque' : '') + '"' + (x[3] ? ' title="' + esc(x[3]) + '"' : '') + '><div class="n">' + x[1] + '</div><div class="r">' + x[0] + '</div></div>';
+    }).join('');
+    var serie = r.meses.map(function (m, i) { return { r: mesRotulo(ini, i), v: m.t, a: m.a }; });
+    $('#fin-g-mes').innerHTML = serie.length ? graficoValor(serie, larguraDe('#fin-g-mes'), 'v') : '<p>Sem clientes no cálculo. Preencha as premissas e os dados dos clientes.</p>';
+    $('#fin-g-acum').innerHTML = serie.length ? graficoValor(serie, larguraDe('#fin-g-acum'), 'a') : '<p>Sem clientes no cálculo.</p>';
+    var tabGrupo = function (g, ordem, rot) {
+      var ks = ordem.filter(function (k) { return g[k]; }).concat(Object.keys(g).filter(function (k) { return ordem.indexOf(k) < 0; }));
+      if (!ks.length) return '<p style="padding:0 20px 16px">Sem clientes no cálculo.</p>';
+      var tot = { n: 0, vgv: 0, liq: 0 };
+      return '<table><thead><tr><th>' + rot + '</th><th class="fin-num">Clientes</th><th class="fin-num">Valor de vendas</th><th class="fin-num">Entra na obra</th></tr></thead><tbody>' +
+        ks.map(function (k) { tot.n += g[k].n; tot.vgv += g[k].vgv; tot.liq += g[k].liq;
+          return '<tr><td>' + esc(rotuloOpcao(k)) + '</td><td class="fin-num">' + g[k].n + '</td><td class="fin-num">' + reais(g[k].vgv) + '</td><td class="fin-num">' + reais(g[k].liq) + '</td></tr>'; }).join('') +
+        '</tbody><tfoot><tr><td>Total</td><td class="fin-num">' + tot.n + '</td><td class="fin-num">' + reais(tot.vgv) + '</td><td class="fin-num">' + reais(tot.liq) + '</td></tr></tfoot></table>';
+    };
+    $('#fin-por-cond').innerHTML = tabGrupo(r.porCond, (S.listas['CONDIÇÕES DE PAGAMENTO'] || []).slice(), 'Condição');
+    $('#fin-por-tip').innerHTML = tabGrupo(r.porTip, (S.listas['TAMANHO APTO'] || []).slice(), 'Tipologia');
+    $('#fin-mes').innerHTML = r.meses.length ? '<table><thead><tr><th>Mês</th><th class="fin-num">Nº</th><th class="fin-num">Entradas (líquidas)</th><th class="fin-num">Parcelas</th><th class="fin-num">Saldo</th><th class="fin-num">Total no mês</th><th class="fin-num">Acumulado</th></tr></thead><tbody>' +
+      r.meses.map(function (m, i) {
+        return '<tr' + (m.t ? '' : ' class="zero"') + '><td>' + mesRotulo(ini, i) + '</td><td class="fin-num">' + i + '</td><td class="fin-num">' + (m.e ? reais(m.e) : '—') + '</td><td class="fin-num">' + (m.p ? reais(m.p) : '—') +
+          '</td><td class="fin-num">' + (m.s ? reais(m.s) : '—') + '</td><td class="fin-num"><b>' + reais(m.t) + '</b></td><td class="fin-num">' + reais(m.a) + '</td></tr>';
+      }).join('') + '</tbody></table>' : '<p style="padding:0 20px 16px">Sem clientes no cálculo.</p>';
+    $('#fin-csv').disabled = !r.meses.length;
+    $('#fin-fora-cx').hidden = !r.fora.length;
+    $('#fin-fora').innerHTML = r.fora.length ? '<table><thead><tr><th>Cliente</th><th>Situação</th><th>Motivo</th></tr></thead><tbody>' + r.fora.map(function (x) {
+      return '<tr data-id="' + esc(x.f.id) + '"><td>' + esc(x.f.nome) + '<span class="menor">' + esc(x.f.id) + '</span></td><td>' + esc(NOME_STATUS[x.f.status] || x.f.status) + '</td><td>' + esc(x.motivo) + '</td></tr>';
+    }).join('') + '</tbody></table>' : '';
+    S.finUltimo = r;
+  }
+
+  /* Colunas de valor em R$, uma serie (chave 'v' por mes ou 'a' acumulado). */
+  function graficoValor(serie, W, chave) {
+    var H = 220, m = { e: 64, d: 10, t: 16, b: 24 };
+    var max = Math.max.apply(null, serie.map(function (p) { return p[chave]; }).concat([1]));
+    var mag = Math.pow(10, Math.floor(Math.log10(max))), passo = [1, 2, 2.5, 5, 10].map(function (k) { return k * mag; }).filter(function (s) { return max / s <= 4; })[0] || mag * 10;
+    var topo = Math.ceil(max / passo) * passo, aw = W - m.e - m.d, ah = H - m.t - m.b;
+    var py = function (v) { return m.t + ah - v / topo * ah; };
+    var g = '';
+    for (var v = 0; v <= topo + 1e-6; v += passo) g += '<line x1="' + m.e + '" x2="' + (W - m.d) + '" y1="' + py(v) + '" y2="' + py(v) + '" stroke="#ECECF0"/><text x="' + (m.e - 6) + '" y="' + (py(v) + 4) + '" text-anchor="end">' + reaisCurto(v) + '</text>';
+    var pas = aw / serie.length, lb = Math.max(1.5, Math.min(18, pas * 0.7)), cada = Math.max(1, Math.ceil(serie.length / Math.max(1, Math.floor(aw / 48))));
+    var corpo = serie.map(function (p, i) {
+      var cx = m.e + pas * i + pas / 2, y = py(p[chave]), h = m.t + ah - y;
+      return '<g><title>' + p.r + ': ' + reais(p[chave]) + '</title><rect x="' + (m.e + pas * i) + '" y="' + m.t + '" width="' + pas + '" height="' + ah + '" fill="transparent"/>' +
+        (h > 0 ? '<rect x="' + (cx - lb / 2) + '" y="' + y + '" width="' + lb + '" height="' + h + '" rx="' + Math.min(2, lb / 2) + '" fill="#400909"/>' : '') +
+        (i % cada === 0 ? '<text x="' + cx + '" y="' + (H - 6) + '" text-anchor="middle">' + p.r + '</text>' : '') + '</g>';
+    }).join('');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Recebimento previsto por mês">' + g + corpo + '</svg>';
+  }
+
+  function formFinanceiro() {
+    var fin = S.fin, pode = !!S.usuario.financeiro, dis = pode ? '' : ' disabled';
+    var tips = (S.listas['TAMANHO APTO'] || []).slice();
+    Object.keys(fin.precos).forEach(function (k) { if (tips.indexOf(k) < 0) tips.push(k); });
+    var conds = (S.listas['CONDIÇÕES DE PAGAMENTO'] || []).slice();
+    Object.keys(fin.condicoes).forEach(function (k) { if (conds.indexOf(k) < 0) conds.push(k); });
+    var fmtPreco = function (v) { var n = numFin(v); return n > 0 ? Math.round(n).toLocaleString('pt-BR') : ''; };
+    var fmt = function (v) { var n = numFin(v); return isFinite(n) ? String(n).replace('.', ',') : ''; };
+    $('#fin-form').innerHTML =
+      '<div class="linha-ini"><div><label class="rot" for="fin-inicio" style="display:block;font-size:12.5px;color:var(--suave);margin-bottom:5px">Início do fluxo (mês da assinatura)</label>' +
+      '<input type="month" id="fin-inicio" value="' + esc(fin.inicio) + '"' + dis + '></div>' +
+      '<span class="menor">Mês 0 = entrada. Parcelas a partir do mês 1.</span></div>' +
+      '<h3>Preço de cada tipologia (valor da unidade, em R$)</h3><div class="tabela-rolo"><table class="t-preco"><thead><tr><th>Tipologia</th><th class="fin-num">Preço (R$)</th></tr></thead><tbody>' +
+      tips.map(function (k) {
+        return '<tr><td>' + esc(k) + '</td><td><input type="text" inputmode="decimal" data-preco="' + esc(k) + '" value="' + fmtPreco(fin.precos[k]) + '" placeholder="0" aria-label="Preço da tipologia ' + esc(k) + '"' + dis + '></td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<h3>Como cada condição de pagamento é paga (percentuais sobre o valor da unidade)</h3><div class="tabela-rolo"><table class="t-cond"><thead><tr><th>Condição</th>' +
+      CAMPOS_COND.map(function (c) { return '<th class="fin-num">' + c[1] + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      conds.map(function (k) {
+        var c = fin.condicoes[k] || {}, d = descCond(c);
+        return '<tr data-cond="' + esc(k) + '"><td>' + esc(k) + '</td>' + CAMPOS_COND.map(function (x) {
+          return '<td><input type="text" inputmode="decimal" data-campo="' + x[0] + '" value="' + fmt(c[x[0]]) + '" placeholder="0" aria-label="' + esc(k + ': ' + x[1]) + '"' + dis + '></td>';
+        }).join('') + '</tr><tr><td colspan="7" class="desc' + (d.ok ? '' : ' aviso') + '" data-desc="' + esc(k) + '">' + esc(d.txt) + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<div class="acoes">' + (pode ? '<button type="button" class="bt pri" id="fin-salvar">Salvar premissas</button><span class="menor">Fica guardado na aba FINANCEIRO da planilha.</span>'
+        : '<span class="menor">Só administradores alteram as premissas.</span>') + '</div>';
+  }
+  function lerFormFinanceiro() {
+    var d = { inicio: $('#fin-inicio').value, precos: {}, condicoes: {} };
+    Array.prototype.forEach.call(document.querySelectorAll('#fin-form [data-preco]'), function (el) { d.precos[el.dataset.preco] = el.value.trim(); });
+    Array.prototype.forEach.call(document.querySelectorAll('#fin-form tr[data-cond]'), function (tr) {
+      var c = {};
+      Array.prototype.forEach.call(tr.querySelectorAll('[data-campo]'), function (el) { c[el.dataset.campo] = el.value.trim(); });
+      d.condicoes[tr.dataset.cond] = c;
+    });
+    return d;
+  }
+  function baixarCsvFluxo() {
+    var r = S.finUltimo; if (!r || !r.meses.length) return;
+    var num = function (v) { return (Math.round(v * 100) / 100).toFixed(2).replace('.', ','); };
+    var l = [['Mês', 'Nº', 'Entradas (líquidas)', 'Parcelas', 'Saldo', 'Total no mês', 'Acumulado'].join(';')].concat(r.meses.map(function (m, i) {
+      return [mesRotulo(S.fin.inicio, i), i, num(m.e), num(m.p), num(m.s), num(m.t), num(m.a)].join(';');
+    }));
+    var blob = new Blob(['\ufeff' + l.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fluxo-previsto-milano.csv';
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+
   /* ---------------- Indicadores (com filtro cruzado) ---------------- */
   var SIMNAO = ['SIM', 'NÃO'];
   var DIMS = [
@@ -1716,7 +1965,10 @@
   ];
   function dim0(id) { return DIMS.filter(function (d) { return d.id === id; })[0]; }
   function emAtd() { return S.modoInd === 'atend'; }
-  function ctxInd() { return emAtd() ? { dims: DIMS_ATD, f: S.fAtd, un: 'atendimento', uns: 'atendimentos' } : { dims: DIMS, f: S.fInd, un: 'ficha', uns: 'fichas' }; }
+  function ctxInd() {
+    if (emAtd()) return { dims: DIMS_ATD, f: S.fAtd, un: 'atendimento', uns: 'atendimentos' };
+    return S.modoInd === 'processo' ? { dims: DIMS, f: {}, un: 'cliente', uns: 'clientes' } : { dims: DIMS, f: S.fInd, un: 'ficha', uns: 'fichas' };
+  }
   function alternarFiltro(d, v) { var f = ctxInd().f; if (Object.prototype.hasOwnProperty.call(f, d) && f[d] === v) delete f[d]; else f[d] = v; }
   function dim(id) { return ctxInd().dims.filter(function (d) { return d.id === id; })[0]; }
   function valoresDim(d, f) {
@@ -1739,12 +1991,17 @@
 
   function desenharIndicadores() {
     Array.prototype.forEach.call(document.querySelectorAll('#modo-ind [data-modo]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.modo === S.modoInd)); });
-    $('#topo-proc').hidden = emAtd(); $('#topo-atd').hidden = !emAtd();
+    var proc = S.modoInd === 'processo';
+    $('#topo-proc').hidden = !proc; $('#topo-atd').hidden = !emAtd(); $('#vontades-cx').hidden = !emAtd();
+    $('#funil').hidden = S.modoInd === 'fichas';
+    $('#filtros-ind').hidden = proc; $('#graficos').hidden = proc;
+    $('#titulo-detalhe').hidden = proc;
+    $('#titulo-detalhe').textContent = emAtd() ? 'Todos os atendimentos (em andamento e que já viraram ficha)' : 'Fichas de interesse';
     if (emAtd()) return desenharIndAtend();
+    if (proc) return desenharIndProcesso();
     $('#t-dia').textContent = 'Fichas por dia'; $('#p-dia').textContent = 'Pela data de recebimento. Clique em um dia para filtrar.';
     $('#t-acum').textContent = 'Fichas acumuladas'; $('#p-acum').textContent = 'Soma desde a primeira ficha';
     var todas = fichasReais();
-    desenharFunil(todas);
     var base = todas.filter(function (f) { return passaFiltros(f, null); });
     var hoje = hojeBr();
     var conta = function (st) { return base.filter(function (f) { return f.status === st; }).length; };
@@ -1788,8 +2045,70 @@
         return '<div class="lb"><div class="topo-b"><span>' + n + 'ª reunião</span><span>' +
           (vs.length ? nota(media(vs)) + ' · ' + vs.length + (vs.length === 1 ? ' ficha' : ' fichas') : 'sem registros') + '</span></div>' +
           '<div class="trilho"><i style="width:' + (media(vs) / 5 * 100) + '%"></i></div></div>';
-      }).join('') + '</div></div>' +
-      cartaoFunil('Atendimentos por corretor', ['corretor', 'corretor2']) + cartaoFunil('Atendimentos por imobiliária', ['imobiliaria', 'imobiliaria2']);
+      }).join('') + '</div></div>';
+  }
+
+  /* Visao "Processo completo": do primeiro contato a mesa, atendimentos e fichas juntos. Sem filtro cruzado. */
+  function dataEntrada(f) { return (ehAtend(f) || f.viraFichaEm) ? diaPrimeiroContato(f) : (f.dia || String(f.digitadoEm || '').slice(0, 10)); }
+  function desenharIndProcesso() {
+    var todos = S.fichas, reais = fichasReais();
+    var emAtend = todos.filter(ehAtend), viraram = reais.filter(function (f) { return f.viraFichaEm; });
+    var passaram = emAtend.length + viraram.length, hoje = hojeBr();
+    var kpi = function (l) { return l.map(function (x) {
+      return '<div class="cartao kpi' + (x[2] ? ' destaque' : '') + '"><div class="n">' + x[1] + '</div><div class="r">' + x[0] + '</div></div>'; }).join(''); };
+    $('#kpis').innerHTML = kpi([
+      ['Clientes registrados', todos.length, true],
+      ['Novos hoje', todos.filter(function (f) { return dataEntrada(f) === hoje; }).length],
+      ['Em atendimento', emAtend.length],
+      ['Fichas de interesse', reais.length],
+      ['Com PIX', reais.filter(function (f) { return f.diaPix; }).length],
+      ['Com mesa marcada', reais.filter(function (f) { return f.diaAtend; }).length]
+    ]);
+    $('#funil').innerHTML = kpi([
+      ['Atendimentos que viraram ficha', viraram.length],
+      ['Conversão dos atendimentos', passaram ? Math.round(viraram.length / passaram * 100) + '%' : '—'],
+      ['Fichas sem atendimento antes', reais.length - viraram.length],
+      ['Fichas aprovadas', reais.filter(function (f) { return f.status === 'APROVADA'; }).length]
+    ]);
+    $('#sub-ind').textContent = todos.length + (todos.length === 1 ? ' cliente registrado' : ' clientes registrados') + ', somando atendimentos e fichas. Mostra sempre o total.';
+    $('#g-funil').innerHTML = graficoFunil();
+    $('#g-gerentes').innerHTML = graficoGerentes();
+    $('#t-dia').textContent = 'Novos clientes por dia'; $('#p-dia').textContent = 'Atendimentos pelo primeiro contato e fichas diretas pela data de recebimento';
+    $('#t-acum').textContent = 'Clientes acumulados'; $('#p-acum').textContent = 'Soma desde o primeiro cliente';
+    var serie = seriePorDia(todos, dataEntrada);
+    var acum = 0;
+    var serieAcum = serie.map(function (p) { acum += p.v; return { r: p.r, d: p.d, v: acum, n: p.v }; });
+    $('#g-dia').innerHTML = serie.length ? graficoBarras(serie, larguraDe('#g-dia'), '') : '<p>Nenhum cliente registrado ainda.</p>';
+    $('#g-acum').innerHTML = serie.length ? graficoLinha(serieAcum, larguraDe('#g-acum'), '') : '<p>Nenhum cliente registrado ainda.</p>';
+    $('#graficos').innerHTML = '';
+    var origem = [['Em atendimento', emAtend.length], ['Atendimento que virou ficha', viraram.length], ['Ficha direta, sem atendimento', reais.length - viraram.length]];
+    $('#quebras').innerHTML = cartaoFunil('Atendimentos por corretor', ['corretor', 'corretor2']) + cartaoFunil('Atendimentos por imobiliária', ['imobiliaria', 'imobiliaria2']) +
+      '<div class="cartao graf"><h3>Origem dos clientes</h3><p>Como cada cliente registrado chegou até aqui</p><div class="linhas-b">' + origem.map(function (o) {
+        var pct = todos.length ? Math.round(o[1] / todos.length * 100) : 0;
+        return '<div class="lb"><div class="topo-b"><span>' + o[0] + '</span><span>' + o[1] + ' · ' + pct + '%</span></div><div class="trilho"><i style="width:' + pct + '%"></i></div></div>';
+      }).join('') + '</div></div>';
+  }
+
+  /* Vontades dos clientes ainda em atendimento (respeita os filtros, menos o de situacao). */
+  function desenharVontades() {
+    var base = S.fichas.filter(function (f) { return ehAtend(f) && passaFiltros(f, 'situacao'); });
+    $('#vontades-sub').textContent = base.length ? base.length + (base.length === 1 ? ' cliente ainda em atendimento' : ' clientes ainda em atendimento') +
+      (filtrosAtivos().filter(function (d) { return d.id !== 'situacao'; }).length ? ', nos filtros escolhidos abaixo.' : '.') : 'Nenhum cliente em atendimento neste filtro.';
+    $('#vontades').innerHTML = ['pagamento', 'tamanho', 'temperatura', 'andar', 'garagem', 'clienteZabaleta'].map(function (id) {
+      var d = dim(id), cont = {};
+      base.forEach(function (f) { var v = valoresDim(d, f)[0]; cont[v] = (cont[v] || 0) + 1; });
+      var c = campo(d.id);
+      var ordem = (d.ops ? d.ops.slice() : (c ? opcoesDe(c).slice() : []));
+      Object.keys(cont).forEach(function (v) { if (v !== '' && ordem.indexOf(v) < 0) ordem.push(v); });
+      if (cont['']) ordem.push('');
+      var max = Math.max.apply(null, ordem.map(function (v) { return cont[v] || 0; }).concat([1]));
+      return '<div class="cartao graf"><h3>' + esc(id === 'temperatura' ? 'Temperatura do cliente' : d.titulo) + '</h3><p>Clientes em atendimento</p><div class="linhas-b">' +
+        ordem.map(function (v) {
+          var n = cont[v] || 0, pct = base.length ? Math.round(n / base.length * 100) : 0;
+          return '<div class="lb' + (v === '' ? ' ni' : '') + '"><div class="topo-b"><span>' + esc(rotuloDim(d, v)) + '</span><span>' + n + ' · ' + pct + '%</span></div>' +
+            '<div class="trilho"><i style="width:' + (n / max * 100) + '%"></i></div></div>';
+        }).join('') + '</div></div>';
+    }).join('');
   }
 
   /* Graficos e cartoes de cada dimensao do modo atual; devolve as dimensoes (as de lista vao para os cartoes de baixo). */
@@ -1816,6 +2135,7 @@
 
   /* Visao "Atendimentos": cenario dos clientes atendidos, com filtro cruzado proprio. */
   function desenharIndAtend() {
+    desenharVontades();
     var todos = S.fichas.filter(function (f) { return ehAtend(f) || f.viraFichaEm; });
     var base = todos.filter(function (f) { return passaFiltros(f, null); });
     var hoje = hojeBr();
@@ -2519,8 +2839,10 @@
       var acesso = '<span class="selo ' + (u.liberado ? 'APROVADA' : 'DEVOLVIDA') + '">' + (u.liberado ? 'Liberado' : 'Bloqueado') + '</span>' +
         (u.fixo ? '' : '<button type="button" class="bt mini bt-acesso">' + (u.liberado ? 'Bloquear' : 'Liberar') + '</button>');
       var alt = u.fixo ? 'Não pode ser alterado' : [u.alteradoPor, u.alteradoEm].filter(Boolean).join(' · ');
+      var fin = '<span class="selo ' + (u.financeiro ? 'APROVADA' : 'PENDENTE') + '">' + (u.financeiro ? 'Com acesso' : 'Sem acesso') + '</span>' +
+        (!u.fixo && S.usuario.principal ? '<button type="button" class="bt mini bt-fin">' + (u.financeiro ? 'Tirar acesso' : 'Dar acesso') + '</button>' : '');
       return '<tr data-email="' + esc(u.email) + '"><td>' + esc(u.nome || '—') + '<span class="menor">' + esc(u.email) + '</span></td>' +
-        '<td>' + papel + '</td><td><div class="acesso">' + acesso + '</div></td><td><span class="menor">' + esc(alt) + '</span></td></tr>';
+        '<td>' + papel + '</td><td><div class="acesso">' + acesso + '</div></td><td><div class="acesso">' + fin + '</div></td><td><span class="menor">' + esc(alt) + '</span></td></tr>';
     }).join('');
   }
 
@@ -2555,6 +2877,15 @@
       if (u) gravarUsuario({ email: u.email, nome: u.nome, papel: ev.target.value, liberado: u.liberado }, u.email + ' agora é ' + NOME_PAPEL[ev.target.value].toLowerCase() + '.');
     });
     $('#linhas-usuarios').addEventListener('click', function (ev) {
+      var bf = ev.target.closest('.bt-fin');
+      var uf = bf && usuarioDaLinha(bf);
+      if (!uf) return;
+      bf.disabled = true;
+      srv('definirAcessoFinanceiro', uf.email, !uf.financeiro).then(function (lista) {
+        desenharUsuarios(lista); toast(uf.financeiro ? uf.email + ' não vê mais o financeiro.' : uf.email + ' agora vê o financeiro.');
+      }).catch(function (e) { toast(e.message, true); bf.disabled = false; });
+    });
+    $('#linhas-usuarios').addEventListener('click', function (ev) {
       var bt = ev.target.closest('.bt-acesso');
       var u = bt && usuarioDaLinha(bt);
       if (!u) return;
@@ -2566,13 +2897,14 @@
   /* ---------------- Navegacao ---------------- */
   function irPara(aba) {
     S.aba = aba;
-    ['clientes', 'nova', 'fichas', 'fila', 'atend', 'ind', 'usuarios'].forEach(function (a) { $('#v-' + a).hidden = a !== aba; });
+    ['clientes', 'nova', 'fichas', 'fila', 'atend', 'ind', 'fin', 'usuarios'].forEach(function (a) { $('#v-' + a).hidden = a !== aba; });
     /* O formulario no modo atendimento pertence a aba Atendimentos. */
     var marcada = aba === 'nova' && S.modo === 'ATEND' ? 'clientes' : aba;
     Array.prototype.forEach.call(document.querySelectorAll('.abas button'), function (b) {
       b.setAttribute('aria-selected', String(b.dataset.aba === marcada));
     });
     if (aba === 'ind') desenharIndicadores();
+    if (aba === 'fin') desenharFinanceiro(true);
     if (aba === 'fichas') desenharLista();
     if (aba === 'atend') desenharAtendimentos();
     if (aba === 'clientes') desenharClientes();
@@ -2583,6 +2915,7 @@
     atualizarSugestoes();
     desenharLista();
     if (S.aba === 'ind') desenharIndicadores();
+    if (S.aba === 'fin') desenharFinanceiro();
     if (S.aba === 'atend') desenharAtendimentos();
     if (S.aba === 'clientes') desenharClientes();
     if (S.aba === 'fila') desenharFila();
@@ -2658,6 +2991,7 @@
       var alvo = ev.target.closest && ev.target.closest('[data-dia]');
       if (!alvo || (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ')) return;
       ev.preventDefault();
+      if (S.modoInd === 'processo') return;
       alternarFiltro('dia', alvo.dataset.dia);
       desenharIndicadores();
     };
@@ -2667,6 +3001,25 @@
       var fx = ctxInd().f;
       if (b.dataset.limpar === '*') Object.keys(fx).forEach(function (k) { delete fx[k]; }); else delete fx[b.dataset.limpar];
       desenharIndicadores();
+    });
+    $('#fin-escopo').addEventListener('click', function (ev) {
+      var b = ev.target.closest('button[data-escopo]'); if (!b) return;
+      S.finEscopo = b.dataset.escopo; desenharFinanceiro();
+    });
+    $('#fin-csv').addEventListener('click', baixarCsvFluxo);
+    $('#fin-fora').addEventListener('click', function (ev) { var tr = ev.target.closest('tr[data-id]'); if (tr) abrirPainel(tr.dataset.id); });
+    $('#fin-form').addEventListener('input', function (ev) {
+      var tr = ev.target.closest('tr[data-cond]'); if (!tr) return;
+      var c = {}; Array.prototype.forEach.call(tr.querySelectorAll('[data-campo]'), function (el) { c[el.dataset.campo] = el.value; });
+      var d = descCond(c), cel = tr.nextElementSibling.querySelector('[data-desc]');
+      cel.textContent = d.txt; cel.className = 'desc' + (d.ok ? '' : ' aviso');
+    });
+    $('#fin-form').addEventListener('click', function (ev) {
+      var b = ev.target.closest('#fin-salvar'); if (!b) return;
+      b.disabled = true;
+      srv('salvarFinanceiro', lerFormFinanceiro()).then(function (r) {
+        S.fin = r.financeiro; toast(r.mensagem); desenharFinanceiro(true); $('#fin-premissas').open = true;
+      }).catch(function (e) { toast(e.message, true); b.disabled = false; });
     });
     $('#modo-ind').addEventListener('click', function (ev) {
       var b = ev.target.closest('button[data-modo]'); if (!b || b.dataset.modo === S.modoInd) return;
@@ -2686,7 +3039,7 @@
     var tempoRedim;
     window.addEventListener('resize', function () {
       clearTimeout(tempoRedim);
-      tempoRedim = setTimeout(function () { if (S.aba === 'ind') desenharIndicadores(); }, 150);
+      tempoRedim = setTimeout(function () { if (S.aba === 'ind') desenharIndicadores(); if (S.aba === 'fin') desenharFinanceiro(); }, 150);
     });
   }
 
@@ -2709,10 +3062,11 @@
 
   var montado = false;
   function aplicarSessao(r) {
-    S.usuario = r.usuario; S.campos = r.campos; S.listas = r.listas; S.fichas = r.fichas; S.atendimento = r.atendimento;
+    S.usuario = r.usuario; S.campos = r.campos; S.listas = r.listas; S.fichas = r.fichas; S.atendimento = r.atendimento; S.fin = r.financeiro || null;
     $('#u-email').textContent = r.usuario.email;
     $('#u-papel').textContent = NOME_PAPEL[r.usuario.papel] || 'Digitação';
     $('#aba-usuarios').hidden = !r.usuario.admin;
+    $('#aba-fin').hidden = !r.usuario.financeiro || !S.fin;
     if (!montado) {
       montado = true;
       montarForm();
