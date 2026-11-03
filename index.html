@@ -360,7 +360,17 @@
   .t-ctr td.laranja { color: #B35F00; font-weight: 600; }
   .t-ctr td.vermelho { color: #C62828; font-weight: 700; }
   .meta-ind { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .meta-ind input { width: 90px; border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; font: inherit; }
+  .meta-ind input { border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; font: inherit; background: var(--branco); }
+  .meta-ind input[type=number] { width: 90px; }
+  .meta-ind details.metas { width: 100%; }
+  .meta-ind summary { cursor: pointer; font-size: 14px; padding: 2px 0; }
+  .metas-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .metas-dica { margin: 8px 0 0; font-size: 13px; color: var(--suave); }
+  .metas-lista { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .meta-chip { display: inline-flex; align-items: center; gap: 4px; background: #F5F5F7; border-radius: 999px; padding: 3px 4px 3px 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .meta-chip.hoje { background: var(--marca-clara); }
+  .meta-chip button { border: 0; background: none; cursor: pointer; color: var(--suave); padding: 2px 6px; border-radius: 999px; font: inherit; }
+  .meta-chip button:hover { background: #E4E4E8; color: #1D1D1F; }
 
   /* Atendimentos */
   .cfg-atend { padding: 14px 20px; margin-bottom: 14px; }
@@ -2309,6 +2319,11 @@
     { id: 'imobiliaria', titulo: 'Imobiliária', multi: ['imobiliaria', 'imobiliaria2'], top: 10 },
     { id: 'corretor', titulo: 'Corretor', multi: ['corretor', 'corretor2'], top: 10 },
     { id: 'gerente', titulo: 'Gerente ou sócio que atendeu' },
+    { id: 'residTipo', titulo: 'Mora em (casa, apto ou outro)' },
+    { id: 'residLocal', titulo: 'Onde mora hoje' },
+    { id: 'residTamanho', titulo: 'Tamanho de onde mora', ops: ['ATÉ 100', '101 A 200', '201 A 300', 'MAIS DE 300'],
+      val: function (f) { var m = +f.residTamanho; return !m ? '' : (m <= 100 ? 'ATÉ 100' : (m <= 200 ? '101 A 200' : (m <= 300 ? '201 A 300' : 'MAIS DE 300'))); },
+      rot: function (v) { return v ? (v === 'ATÉ 100' ? 'Até 100 m²' : (v === 'MAIS DE 300' ? 'Mais de 300 m²' : v.replace(' A ', ' a ') + ' m²')) : 'Não informado'; } },
     { id: 'pix', titulo: 'PIX registrado', ops: SIMNAO, val: function (f) { return f.diaPix ? 'SIM' : 'NÃO'; } },
     { id: 'confirmou', titulo: 'Cliente confirmou os dados', ops: SIMNAO, val: function (f) { return f.clienteConfirmou === 'SIM' ? 'SIM' : 'NÃO'; } },
     { id: 'atendimento', titulo: 'Atendimento marcado', ops: SIMNAO, val: function (f) { return f.diaAtend ? 'SIM' : 'NÃO'; } },
@@ -2337,6 +2352,7 @@
       val: function (f) { var r = ultimoContato(f); return r ? r.corretor : ''; } },
     dim0('tamanho'), dim0('pagamento'), dim0('gerente'), dim0('corretor'), dim0('imobiliaria'),
     dim0('desejo'), dim0('clienteZabaleta'), dim0('primeiraCompra'), dim0('andar'), dim0('garagem'),
+    dim0('residTipo'), dim0('residLocal'), dim0('residTamanho'),
     { id: 'dia', titulo: 'Dia do primeiro contato', semCartao: true, val: diaPrimeiroContato, rot: function (v) { return v; } }
   ];
   function dim0(id) { return DIMS.filter(function (d) { return d.id === id; })[0]; }
@@ -2522,16 +2538,63 @@
     else S.periodo = { de: ate(+tipo - 1), ate: hoje };
   }
 
-  /* Meta de novos atendimentos por dia: aparece na visao Atendimentos; administrador altera ali mesmo. */
-  function metaDia() { return (S.atendimento && S.atendimento.meta) || 0; }
+  /* Metas de novos atendimentos, dia a dia (feriados e fins de semana podem ficar sem meta). Aparecem na visao Atendimentos. */
+  var DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  function metasAtd() { return (S.atendimento && S.atendimento.metas) || {}; }
+  function metaDe(d) { return metasAtd()[d] || 0; }
+  function dataDeBr(d) { var k = chaveDia(d); return new Date(+k.slice(0, 4), +k.slice(4, 6) - 1, +k.slice(6, 8)); }
   function desenharMeta() {
-    var cx = $('#meta-ind');
-    cx.hidden = !emAtd() || (!metaDia() && !S.usuario.admin);
+    var cx = $('#meta-ind'), metas = metasAtd();
+    var dias = Object.keys(metas).sort(function (a, b) { return chaveDia(a) < chaveDia(b) ? -1 : 1; });
+    var hoje = hojeBr();
+    cx.hidden = !emAtd() || (!dias.length && !S.usuario.admin);
     if (cx.hidden) return;
-    cx.innerHTML = S.usuario.admin
-      ? '<label class="rot-filtro" for="meta-dia">Meta de novos atendimentos por dia</label><input type="number" min="0" step="1" id="meta-dia" value="' + (metaDia() || '') + '" placeholder="sem meta">' +
-        '<button type="button" class="bt mini" id="bt-meta">Salvar meta</button>'
-      : '<span class="rot-filtro">Meta: ' + metaDia() + ' novos atendimentos por dia</span>';
+    var resumo = 'Meta de hoje: ' + (metaDe(hoje) ? metaDe(hoje) + ' novos atendimentos' : 'sem meta');
+    if (!S.usuario.admin) { cx.innerHTML = '<span class="rot-filtro">' + resumo + '</span>'; return; }
+    var aberto = cx.querySelector('details') ? cx.querySelector('details').open : !!S.metasAberto;
+    var hojeIso = brParaIso(hoje);
+    cx.innerHTML = '<details class="metas"' + (aberto ? ' open' : '') + '><summary><b>Metas de atendimento por dia</b> · ' + resumo + ' · ' +
+      (dias.length ? dias.length + (dias.length === 1 ? ' dia com meta' : ' dias com meta') : 'nenhum dia com meta') + '</summary>' +
+      '<div class="metas-form">' +
+        '<label class="rot-filtro" for="meta-de">De</label><input type="date" id="meta-de" value="' + hojeIso + '">' +
+        '<label class="rot-filtro" for="meta-ate">até</label><input type="date" id="meta-ate" value="' + hojeIso + '">' +
+        '<div class="filtros" id="meta-sem" role="group" aria-label="Dias da semana">' + [1, 2, 3, 4, 5, 6, 0].map(function (w) {
+          return '<button type="button" data-sem="' + w + '" aria-pressed="' + (w >= 1 && w <= 5) + '">' + DIAS_SEMANA[w] + '</button>'; }).join('') + '</div>' +
+        '<label class="rot-filtro" for="meta-n">Meta</label><input type="number" min="0" step="1" id="meta-n" placeholder="0 tira">' +
+        '<button type="button" class="bt mini pri" id="bt-meta">Aplicar aos dias</button>' +
+      '</div>' +
+      '<p class="metas-dica">A meta vale só para os dias da semana marcados dentro do período. Use 0 para tirar a meta de um dia (feriado, por exemplo).</p>' +
+      (dias.length ? '<div class="metas-lista">' + dias.map(function (d) {
+        return '<span class="meta-chip' + (d === hoje ? ' hoje' : '') + '">' + DIAS_SEMANA[dataDeBr(d).getDay()] + ' ' + d.slice(0, 5) + ' · <b>' + metas[d] + '</b>' +
+          '<button type="button" data-meta-tirar="' + d + '" aria-label="Tirar a meta de ' + d + '" title="Tirar a meta deste dia">✕</button></span>';
+      }).join('') + '</div>' : '') + '</details>';
+  }
+  function salvarMetasTela(ev) {
+    var semana = ev.target.closest('#meta-sem button[data-sem]');
+    if (semana) { semana.setAttribute('aria-pressed', String(semana.getAttribute('aria-pressed') !== 'true')); return; }
+    var tirar = ev.target.closest('[data-meta-tirar]'), b = ev.target.closest('#bt-meta');
+    if (!tirar && !b) return;
+    var lista = [];
+    if (tirar) lista = [{ dia: tirar.dataset.metaTirar, meta: 0 }];
+    else {
+      var de = $('#meta-de').value, ate = $('#meta-ate').value || de, n = $('#meta-n').value.trim();
+      if (!de) { toast('Escolha o primeiro dia.', true); return; }
+      if (n === '' || !/^\d+$/.test(n)) { toast('Informe a meta: um número inteiro (0 tira a meta).', true); $('#meta-n').focus(); return; }
+      if (ate < de) { var x = de; de = ate; ate = x; }
+      var sem = Array.prototype.filter.call(document.querySelectorAll('#meta-sem button[data-sem]'), function (y) { return y.getAttribute('aria-pressed') === 'true'; })
+        .map(function (y) { return +y.dataset.sem; });
+      var d = new Date(+de.slice(0, 4), +de.slice(5, 7) - 1, +de.slice(8, 10)), fim = new Date(+ate.slice(0, 4), +ate.slice(5, 7) - 1, +ate.slice(8, 10));
+      for (; d <= fim && lista.length <= 400; d.setDate(d.getDate() + 1)) {
+        if (sem.indexOf(d.getDay()) >= 0) lista.push({ dia: dois(d.getDate()) + '/' + dois(d.getMonth() + 1) + '/' + d.getFullYear(), meta: n });
+      }
+      if (!lista.length) { toast('Nenhum dia do período cai nos dias da semana marcados.', true); return; }
+      if (lista.length > 400) { toast('No máximo 400 dias de uma vez.', true); return; }
+    }
+    (b || tirar).disabled = true;
+    S.metasAberto = true;
+    srv('salvarMetasAtendimento', lista).then(function (r) {
+      S.atendimento = r.atendimento; toast(r.mensagem); desenharIndicadores();
+    }).catch(function (e) { toast(e.message, true); (b || tirar).disabled = false; });
   }
 
   /* Desempenho por gerente ou socio (base ja filtrada, menos o filtro de gerente). */
@@ -2566,7 +2629,7 @@
     var base = S.fichas.filter(function (f) { return ehAtend(f) && passaFiltros(f, 'situacao'); });
     $('#vontades-sub').textContent = base.length ? base.length + (base.length === 1 ? ' cliente ainda em atendimento' : ' clientes ainda em atendimento') +
       (filtrosAtivos().filter(function (d) { return d.id !== 'situacao'; }).length ? ', nos filtros escolhidos abaixo.' : '.') : 'Nenhum cliente em atendimento neste filtro.';
-    $('#vontades').innerHTML = ['pagamento', 'tamanho', 'temperatura', 'andar', 'garagem', 'clienteZabaleta'].map(function (id) {
+    $('#vontades').innerHTML = ['pagamento', 'tamanho', 'temperatura', 'andar', 'garagem', 'clienteZabaleta', 'residTipo', 'residLocal'].map(function (id) {
       var d = dim(id), cont = {};
       base.forEach(function (f) { var v = valoresDim(d, f)[0]; cont[v] = (cont[v] || 0) + 1; });
       var c = campo(d.id);
@@ -2625,7 +2688,7 @@
       return '<div class="cartao kpi' + (x[2] ? ' destaque' : '') + '"><div class="n">' + x[1] + '</div><div class="r">' + x[0] + '</div></div>'; }).join(''); };
     $('#kpis').innerHTML = kpi([
       [filtrosAtivos().length ? 'Atendimentos no filtro' : 'Atendimentos no total', base.length, true],
-      [metaDia() ? 'Primeiro contato hoje (meta ' + metaDia() + ')' : 'Primeiro contato hoje', S.fichas.filter(function (f) { return (ehAtend(f) || f.viraFichaEm) && diaPrimeiroContato(f) === hoje; }).length + (metaDia() ? ' / ' + metaDia() : '')],
+      [metaDe(hoje) ? 'Primeiro contato hoje (meta ' + metaDe(hoje) + ')' : 'Primeiro contato hoje', S.fichas.filter(function (f) { return (ehAtend(f) || f.viraFichaEm) && diaPrimeiroContato(f) === hoje; }).length + (metaDe(hoje) ? ' / ' + metaDe(hoje) : '')],
       ['Em andamento', base.length - viraram.length],
       ['Viraram ficha', viraram.length],
       ['Conversão em ficha', pct(viraram.length, base.length)],
@@ -2654,14 +2717,22 @@
     $('#t-dia').textContent = 'Novos atendimentos por dia'; $('#p-dia').textContent = 'Pela data do primeiro contato. Clique em um dia para filtrar.';
     $('#t-acum').textContent = 'Atendimentos acumulados'; $('#p-acum').textContent = 'Soma desde o primeiro atendimento';
     var diaSel = Object.prototype.hasOwnProperty.call(S.fAtd, 'dia') ? S.fAtd.dia : '';
-    var serie = seriePorDia(todos.filter(function (f) { return passaFiltros(f, 'dia'); }), diaPrimeiroContato);
-    var acum = 0;
-    var serieAcum = serie.map(function (p) { acum += p.v; return { r: p.r, d: p.d, v: acum, n: p.v }; });
-    if (metaDia() && serie.length) {
-      var bateram = serie.filter(function (p) { return p.v >= metaDia(); }).length;
-      $('#p-dia').textContent = 'Pela data do primeiro contato. Linha tracejada: meta de ' + metaDia() + ' por dia. Bateu a meta em ' + bateram + ' de ' + serie.length + (serie.length === 1 ? ' dia.' : ' dias.');
+    /* Dias com meta ate hoje (dentro do periodo) entram no grafico mesmo sem atendimento, para mostrar a meta nao batida. */
+    var kHoje = chaveDia(hojeBr()), pr = S.periodo;
+    var diasMeta = Object.keys(metasAtd()).map(chaveDia).filter(function (k) {
+      return k && k <= kHoje && (!pr.de || k >= pr.de.replace(/-/g, '')) && (!pr.ate || k <= pr.ate.replace(/-/g, ''));
+    });
+    var serie = seriePorDia(todos.filter(function (f) { return passaFiltros(f, 'dia'); }), diaPrimeiroContato, diasMeta);
+    serie.forEach(function (p) { p.meta = metaDe(p.d); });
+    var acum = 0, acumMeta = 0, comMeta = serie.filter(function (p) { return p.meta; });
+    var serieAcum = serie.map(function (p) { acum += p.v; acumMeta += p.meta; return { r: p.r, d: p.d, v: acum, n: p.v, m: comMeta.length ? acumMeta : 0 }; });
+    if (comMeta.length) {
+      var bateram = comMeta.filter(function (p) { return p.v >= p.meta; }).length;
+      $('#p-dia').textContent = 'Pela data do primeiro contato. Tracejado: a meta de cada dia. Bateu a meta em ' + bateram + ' de ' + comMeta.length + (comMeta.length === 1 ? ' dia com meta.' : ' dias com meta.');
+      var feitos = comMeta.reduce(function (s, p) { return s + p.v; }, 0);
+      $('#p-acum').textContent = 'Soma desde o primeiro atendimento. Tracejado: soma das metas. Nos dias com meta: ' + feitos + ' de ' + acumMeta + ' atendimentos.';
     }
-    $('#g-dia').innerHTML = serie.length ? graficoBarras(serie, larguraDe('#g-dia'), diaSel, metaDia()) : '<p>Nenhum atendimento neste filtro.</p>';
+    $('#g-dia').innerHTML = serie.length ? graficoBarras(serie, larguraDe('#g-dia'), diaSel, comMeta.length ? metaDe : 0) : '<p>Nenhum atendimento neste filtro.</p>';
     $('#g-acum').innerHTML = serie.length ? graficoLinha(serieAcum, larguraDe('#g-acum'), diaSel) : '<p>Nenhum atendimento neste filtro.</p>';
 
     var dims = desenharGraficosDims(todos);
@@ -2879,9 +2950,10 @@
   function larguraDe(sel) { return Math.max(260, Math.round($(sel).getBoundingClientRect().width) || 480); }
 
   /** Fichas por dia de recebimento, com os dias sem ficha preenchidos com zero. */
-  function seriePorDia(fichas, diaDe) {
+  function seriePorDia(fichas, diaDe, extras) {
     var cont = {};
     fichas.forEach(function (f) { var k = chaveDia(diaDe ? diaDe(f) : f.dia); if (k) cont[k] = (cont[k] || 0) + 1; });
+    (extras || []).forEach(function (k) { if (!cont[k]) cont[k] = 0; });
     var chaves = Object.keys(cont).sort();
     if (!chaves.length) return [];
     var paraData = function (k) { return new Date(+k.slice(0, 4), +k.slice(4, 6) - 1, +k.slice(6, 8)); };
@@ -2924,11 +2996,13 @@
   function alvoDia(p, x, y, larg, alt, n) {
     return '<rect class="alvo-dia" data-dia="' + esc(p.d) + '" x="' + x + '" y="' + y + '" width="' + larg + '" height="' + alt +
       '" fill="transparent" tabindex="0" role="button" aria-label="Filtrar pelo dia ' + esc(p.d) + ', ' + nFichas(n) + '">' +
-      '<title>' + esc(p.d) + ': ' + nFichas(n) + '. Clique para filtrar.</title></rect>';
+      '<title>' + esc(p.d) + ': ' + nFichas(n) + (p.meta ? ' (meta ' + p.meta + ')' : '') + '. Clique para filtrar.</title></rect>';
   }
 
   function graficoBarras(serie, W, sel, meta) {
-    var H = 220, f = moldura(serie, W, H, meta);
+    /* meta: numero (linha unica) ou funcao(dia) -> meta daquele dia (tracejado em degraus). */
+    var metaDo = typeof meta === 'function' ? function (p) { return meta(p.d) || 0; } : function () { return meta || 0; };
+    var H = 220, f = moldura(serie, W, H, Math.max.apply(null, serie.map(metaDo).concat([0])));
     var passo = f.aw / serie.length;
     var lb = Math.min(34, Math.max(2, passo * 0.68));
     var corpo = serie.map(function (p, i) {
@@ -2942,13 +3016,26 @@
       if (p.v) s += alvoDia(p, f.m.e + passo * i, f.m.t, passo, f.ah + f.m.b, p.v);
       return s;
     }).join('');
-    var linhaMeta = meta ? '<line x1="' + f.m.e + '" x2="' + (W - f.m.d) + '" y1="' + f.py(meta) + '" y2="' + f.py(meta) + '" stroke="#B9822A" stroke-width="2" stroke-dasharray="6 4"/>' +
-      '<text x="' + (W - f.m.d) + '" y="' + (f.py(meta) - 5) + '" text-anchor="end" style="fill:#8A5F17;font-weight:600">Meta ' + meta + '</text>' : '';
+    var caminho = '', ant = 0, ultX = 0, ultY = 0, ultM = 0;
+    serie.forEach(function (p, i) {
+      var mv = metaDo(p), x0 = f.m.e + passo * i, x1 = x0 + passo;
+      if (mv) { var y = f.py(mv); caminho += (ant ? ' L' : ' M') + x0 + ',' + y + ' L' + x1 + ',' + y; ultX = x1; ultY = y; ultM = mv; }
+      ant = mv;
+    });
+    var linhaMeta = caminho ? '<path d="' + caminho.trim() + '" fill="none" stroke="#B9822A" stroke-width="2" stroke-dasharray="6 4"/>' + legendaMeta(W - f.m.d, 'Meta do dia') : '';
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Por dia">' + f.grade + corpo + linhaMeta + '</svg>';
   }
 
+  /* Legenda da meta no canto de cima, fora das barras. */
+  function legendaMeta(xDir, texto) {
+    var x = xDir - texto.length * 6.6 - 26;
+    return '<g><line x1="' + x + '" x2="' + (x + 20) + '" y1="9" y2="9" stroke="#B9822A" stroke-width="2" stroke-dasharray="5 3"/>' +
+      '<text x="' + xDir + '" y="13" text-anchor="end" style="fill:#8A5F17;font-weight:600">' + texto + '</text></g>';
+  }
+
   function graficoLinha(serie, W, sel) {
-    var H = 220, f = moldura(serie, W, H);
+    var temM = serie.some(function (p) { return p.m; });
+    var H = 220, f = moldura(serie, W, H, temM ? Math.max.apply(null, serie.map(function (p) { return p.m || 0; })) : 0);
     var passo = f.aw / serie.length;
     var px = function (i) { return f.m.e + passo * i + passo / 2; };
     var pts = serie.map(function (p, i) { return px(i) + ',' + f.py(p.v); });
@@ -2966,6 +3053,8 @@
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Fichas acumuladas">' + f.grade +
       '<path d="' + area + '" fill="#BE9572" opacity=".28"/>' +
       (serie.length > 1 ? '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#400909" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' : '') +
+      (temM ? '<polyline points="' + serie.map(function (p, i) { return p.m ? px(i) + ',' + f.py(p.m) : ''; }).filter(Boolean).join(' ') + '" fill="none" stroke="#B9822A" stroke-width="2" stroke-dasharray="6 4"/>' +
+        legendaMeta(W - f.m.d, 'Meta acumulada: ' + (ult.m || 0)) : '') +
       pontos + '<text x="' + Math.min(ux, W - 16) + '" y="' + (uy - 9) + '" text-anchor="end" style="fill:#1D1D1F;font-weight:600;font-size:12px">' + ult.v + '</text>' +
       rot + '</svg>';
   }
@@ -3517,13 +3606,7 @@
     /* Cronometros a cada segundo; lista do lounge recarregada do servidor a cada 15 segundos enquanto a aba estiver aberta. */
     setInterval(function () { if (S.aba === 'contratos') tickContratos(); }, 1000);
     setInterval(function () { if (S.aba === 'contratos' && !document.hidden && S.ctr) carregarContratos(true); }, 15000);
-    $('#meta-ind').addEventListener('click', function (ev) {
-      var b = ev.target.closest('#bt-meta'); if (!b) return;
-      b.disabled = true;
-      srv('salvarMetaAtendimento', $('#meta-dia').value.trim()).then(function (r) {
-        S.atendimento = r.atendimento; toast(r.mensagem); desenharIndicadores();
-      }).catch(function (e) { toast(e.message, true); b.disabled = false; });
-    });
+    $('#meta-ind').addEventListener('click', salvarMetasTela);
     $('#filtros-ind').addEventListener('click', function (ev) {
       var b = ev.target.closest('button[data-limpar]'); if (!b) return;
       var fx = ctxInd().f;
