@@ -312,6 +312,55 @@
   button.lb[aria-pressed="true"] .topo-b span:first-child { font-weight: 600; color: var(--marca-escura); }
   .graf.filtrado button.lb[aria-pressed="false"] { opacity: .5; }
   .resto { margin: 4px 0 0; }
+  .ver-todas { margin-top: 8px; background: none; border: 0; padding: 4px 0; color: var(--marca); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .ver-todas:hover { text-decoration: underline; }
+  .periodo-ind { gap: 8px; }
+  .periodo-ind input[type=date] { border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 13.5px; background: var(--branco); }
+  .emp[data-dim] { cursor: pointer; border-radius: 8px; padding: 3px 6px; margin: -3px -6px; }
+  .emp[data-dim]:hover { background: #F5F5F7; }
+  .emp[aria-pressed="true"] { background: var(--marca-clara); }
+  .emp[aria-pressed="true"] .nome { font-weight: 600; color: var(--marca-escura); }
+  .t-ger { min-width: 760px; }
+  .t-ger td, .t-ger th { padding: 9px 12px; }
+  .t-ger tr[data-dim] { cursor: pointer; }
+  .t-ger tbody tr[data-dim]:hover td { background: #F5F5F7; }
+  .t-ger tr[aria-pressed="true"] td { background: var(--marca-clara); font-weight: 600; }
+  .t-ger .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #ger-tab { margin-bottom: 12px; }
+  /* Lounge de contratos */
+  .ctr-barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .ctr-barra select, .ctr-barra input[type=search] { border: 1px solid var(--linha); border-radius: 10px; padding: 9px 12px; font: inherit; background: var(--branco); }
+  .ctr-barra input[type=search] { flex: 1 1 260px; min-width: 0; }
+  #ctr-lista { display: grid; gap: 10px; }
+  .ctr-card { background: var(--branco); border-radius: var(--raio); box-shadow: var(--sombra); padding: 14px 16px; border-left: 6px solid transparent; display: grid; gap: 8px; }
+  .ctr-card.laranja { border-left-color: #E0821E; background: #FFF6EC; }
+  .ctr-card.vermelho { border-left-color: #C62828; background: #FDECEC; }
+  .ctr-card.erro { box-shadow: var(--sombra), inset 0 0 0 2px #C62828; }
+  .ctr-topo { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .ctr-topo b { font-size: 16px; }
+  .ctr-topo .menor, .ctr-estado .menor { color: var(--suave); font-size: 13px; }
+  .ctr-estado { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .ctr-tempo { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .ctr-card.laranja .ctr-tempo { color: #B35F00; }
+  .ctr-card.vermelho .ctr-tempo { color: #C62828; }
+  .ctr-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ctr-acoes .bt { min-height: 42px; }
+  .ctr-hist { font-size: 13px; color: var(--suave); }
+  .ctr-hist summary { cursor: pointer; }
+  .ctr-hist ul { margin: 6px 0 0; padding-left: 18px; }
+  .selo.ctr-e0 { background: #F0F0F3; color: #55555B; }
+  .selo.ctr-e1 { background: #FFF1DD; color: #8A4B00; }
+  .selo.ctr-e2 { background: #E6F0FA; color: #1F5E8E; }
+  .selo.ctr-e3 { background: #FDE2E2; color: #A11F1F; }
+  .selo.ctr-e4 { background: var(--apr-f); color: var(--apr-t); }
+  .selo.ctr-e5 { background: #ECECF0; color: #3A3A40; }
+  .ctr-vazio { padding: 24px; text-align: center; color: var(--suave); }
+  .t-ctr td, .t-ctr th { padding: 8px 12px; }
+  .t-ctr .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .t-ctr td.laranja { color: #B35F00; font-weight: 600; }
+  .t-ctr td.vermelho { color: #C62828; font-weight: 700; }
+  .meta-ind { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .meta-ind input { width: 90px; border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; font: inherit; }
 
   /* Atendimentos */
   .cfg-atend { padding: 14px 20px; margin-bottom: 14px; }
@@ -444,6 +493,7 @@
         <button role="tab" data-aba="fichas" aria-selected="false">Fichas <span class="conta" id="conta-pend" hidden></span></button>
         <button role="tab" data-aba="fila" aria-selected="false">Fila</button>
         <button role="tab" data-aba="atend" aria-selected="false">Mesas</button>
+        <button role="tab" data-aba="contratos" aria-selected="false">Contratos</button>
         <button role="tab" data-aba="ind" aria-selected="false">Indicadores</button>
         <button role="tab" data-aba="fin" aria-selected="false" id="aba-fin" hidden>Financeiro</button>
         <button role="tab" data-aba="usuarios" aria-selected="false" id="aba-usuarios" hidden>Usuários</button>
@@ -580,6 +630,20 @@
       </div>
     </section>
 
+    <!-- Lounge de contratos: dia das assinaturas -->
+    <section id="v-contratos" hidden>
+      <h1>Lounge de contratos</h1>
+      <p class="sub">Marque cada etapa do cliente. A espera pelo contrato fica laranja aos 15 minutos e vermelha aos 20. Depois de um contrato com erro, o contrato novo tem 10 minutos: laranja aos 7 e vermelho aos 10.</p>
+      <div class="ctr-barra">
+        <label class="rot-filtro" for="ctr-dia">Dia</label><select id="ctr-dia"></select>
+        <input type="search" id="ctr-busca" placeholder="Buscar cliente: nome, CPF, nº da ficha ou código" aria-label="Buscar cliente">
+        <button type="button" class="bt" id="ctr-atualizar">Atualizar</button>
+      </div>
+      <div class="filtros" id="ctr-filtro" role="group" aria-label="Situação no lounge" style="margin-bottom:12px"></div>
+      <div class="kpis" id="ctr-kpis"></div>
+      <div id="ctr-lista"></div>
+    </section>
+
     <!-- 5. Indicadores -->
     <section id="v-ind" hidden>
       <h1>Indicadores do lançamento</h1>
@@ -587,7 +651,31 @@
         <button type="button" data-modo="atend" aria-pressed="false">Atendimentos</button>
         <button type="button" data-modo="fichas" aria-pressed="false">Fichas</button>
         <button type="button" data-modo="processo" aria-pressed="true">Processo completo</button>
+        <button type="button" data-modo="contratos" aria-pressed="false">Dia dos contratos</button>
       </div>
+      <div id="ind-ctr" hidden>
+        <div class="ctr-barra"><label class="rot-filtro" for="ind-ctr-dia">Dia</label><select id="ind-ctr-dia"></select></div>
+        <p class="sub" id="ind-ctr-sub"></p>
+        <div class="kpis" id="ind-ctr-kpis"></div>
+        <div class="funil" id="ind-ctr-kpis2"></div>
+        <div class="dupla">
+          <div class="cartao graf"><h3>Espera pelo contrato</h3><p>Da entrada no lounge até receber o primeiro contrato</p><div id="ind-ctr-espera"></div></div>
+          <div class="cartao graf"><h3>Assinaturas por hora</h3><p>Hora em que cada cliente assinou</p><div id="ind-ctr-hora"></div></div>
+        </div>
+        <div class="cartao fin-tab" id="ind-ctr-ger" style="margin-bottom:12px"></div>
+        <div class="cartao fin-tab"><div class="fin-topo"><h3>Clientes do dia</h3></div><div class="tabela-rolo" id="ind-ctr-tab"></div></div>
+      </div>
+      <div class="barra periodo-ind" id="periodo-ind">
+        <span class="rot-filtro">Período</span>
+        <input type="date" id="per-de" aria-label="Período: de"><span class="rot-filtro">até</span><input type="date" id="per-ate" aria-label="Período: até">
+        <div class="filtros" id="per-rapido">
+          <button type="button" data-per="hoje" aria-pressed="false">Hoje</button>
+          <button type="button" data-per="7" aria-pressed="false">Últimos 7 dias</button>
+          <button type="button" data-per="30" aria-pressed="false">Últimos 30 dias</button>
+          <button type="button" data-per="tudo" aria-pressed="true">Tudo</button>
+        </div>
+      </div>
+      <div class="barra meta-ind" id="meta-ind" hidden></div>
       <p class="sub" id="sub-ind"></p>
       <div class="kpis" id="kpis"></div>
       <div class="funil" id="funil"></div>
@@ -598,16 +686,17 @@
       <div id="vontades-cx" hidden><h2 class="sec-ind">O que querem os clientes em atendimento</h2>
         <p class="sub" id="vontades-sub"></p><div class="tripla" id="vontades"></div></div>
       <div class="dupla" id="topo-proc">
-        <div class="cartao graf"><h3>Funil do lançamento</h3><p>Do primeiro atendimento à mesa. Cada etapa conta quem passou pelas anteriores. Mostra sempre o total.</p><div id="g-funil"></div></div>
-        <div class="cartao graf"><h3>Clientes por gerente ou sócio</h3><p>Quem atendeu cada cliente registrado. Mostra sempre o total.</p><div id="g-gerentes"></div></div>
+        <div class="cartao graf"><h3>Funil do lançamento</h3><p>Do primeiro atendimento à mesa. Cada etapa conta quem passou pelas anteriores, nos clientes do filtro.</p><div id="g-funil"></div></div>
+        <div class="cartao graf"><h3>Clientes por gerente ou sócio</h3><p>Quem atendeu cada cliente. Clique em um nome para filtrar.</p><div id="g-gerentes"></div></div>
       </div>
       <h2 class="sec-ind" id="titulo-detalhe" hidden></h2>
       <div class="barra" id="filtros-ind"></div>
-      <div class="dupla">
+      <div class="dupla" id="dupla-dia">
         <div class="cartao graf"><h3 id="t-dia">Fichas por dia</h3><p id="p-dia">Pela data de recebimento. Clique em um dia para filtrar.</p><div id="g-dia"></div></div>
         <div class="cartao graf"><h3 id="t-acum">Fichas acumuladas</h3><p id="p-acum">Soma desde a primeira ficha</p><div id="g-acum"></div></div>
       </div>
       <div class="graficos" id="graficos"></div>
+      <div class="cartao" id="ger-tab" hidden></div>
       <div class="tripla" id="quebras"></div>
     </section>
 
@@ -653,6 +742,11 @@
         <div class="campo"><label class="rot" for="nu-papel">O que pode fazer</label><select id="nu-papel"></select></div>
         <button type="submit" class="bt pri" id="bt-add-usuario">Liberar acesso</button>
       </form>
+      <form id="form-renomear" class="cartao novo-usuario" novalidate autocomplete="off">
+        <div class="campo"><label class="rot" for="ren-de">Renomear gerente ou sócio</label><select id="ren-de"></select></div>
+        <div class="campo"><label class="rot" for="ren-para">Novo nome</label><input type="text" id="ren-para" maxlength="80"></div>
+        <button type="submit" class="bt" id="bt-renomear">Renomear em todos os registros</button>
+      </form>
       <div class="cartao">
         <div class="tabela-rolo">
           <table class="t-usuarios">
@@ -684,7 +778,7 @@
   'use strict';
 
   var S = { usuario: null, campos: [], listas: {}, fichas: [], atendimento: null, q: '', status: 'TODAS', ordem: 'recentes', editId: null, aberta: null,
-    fInd: {}, fAtd: {}, modoInd: 'processo', fin: null, finEscopo: 'todos', finVisao: 'clientes', diaAtend: '', filaSel: null, cfgDias: [], corretores: {}, reuEdit: null, aba: 'nova',
+    ctr: null, ctrDia: '', ctrFiltro: 'todos', ctrQ: '', ctrDesvio: 0, indCtrDia: '', fInd: {}, fAtd: {}, fProc: {}, periodo: { de: '', ate: '' }, verTodas: {}, modoInd: 'processo', fin: null, finEscopo: 'todos', finVisao: 'clientes', diaAtend: '', filaSel: null, cfgDias: [], corretores: {}, reuEdit: null, aba: 'nova',
     modo: 'FICHA', converter: false, qCli: '', ordemCli: 'recentes' };
   var LARGOS = { nome: 1, nomeC: 1, endereco: 1, enderecoC: 1, email: 1, emailC: 1, corretor: 1, corretor2: 1, imobiliaria: 1, imobiliaria2: 1, pixCorretor: 1, pixCorretor2: 1 };
   var TOTAIS = { pagamento: 1, gerente: 1 };
@@ -1737,6 +1831,245 @@
     }).catch(function (e) { toast(e.message, true); bt.disabled = false; });
   }
 
+  /* ---------------- Lounge de contratos ---------------- */
+  var CTR_PROX = { '': ['ENTROU'], 'ENTROU': ['RECEBEU', 'SAIU'], 'RECEBEU': ['ASSINOU', 'ERRO', 'SAIU'], 'ERRO': ['RECEBEU NOVO', 'SAIU'],
+    'RECEBEU NOVO': ['ASSINOU', 'ERRO', 'SAIU'], 'ASSINOU': ['SAIU'], 'SAIU': [] };
+  var CTR_BOTAO = { 'ENTROU': ['Entrou no lounge contratos', 'pri'], 'RECEBEU': ['Recebeu contrato', 'pri'], 'ASSINOU': ['Assinou contrato', 'ok'],
+    'ERRO': ['Contrato com erro', 'perigo'], 'RECEBEU NOVO': ['Recebeu contrato novo', 'pri'], 'SAIU': ['Cliente foi embora', ''] };
+  var CTR_EVENTO = { 'ENTROU': 'Entrou no lounge', 'RECEBEU': 'Recebeu contrato', 'ASSINOU': 'Assinou contrato', 'ERRO': 'Contrato com erro',
+    'RECEBEU NOVO': 'Recebeu contrato novo', 'SAIU': 'Foi embora' };
+  /* Limites de espera em minutos: [laranja, vermelho]. */
+  var CTR_LIM = { 'ENTROU': [15, 20], 'ERRO': [7, 10] };
+  var CTR_FILTROS = [['todos', 'Todos'], ['ERRO', 'Contrato com erro'], ['ENTROU', 'Aguardando contrato'], ['CONTRATO', 'Com o contrato'],
+    ['', 'Ainda não chegaram'], ['ASSINOU', 'Assinaram'], ['SAIU', 'Foram embora']];
+
+  function agoraMs() { return Date.now() + (S.ctrDesvio || 0); }
+  function diaDoEvento(e) { return String(e.quando || '').slice(0, 10); }
+  function horaDe(ms) { var d = new Date(ms); return dois(d.getHours()) + ':' + dois(d.getMinutes()); }
+  function relogio(ms) { var s = Math.max(0, Math.floor(ms / 1000)); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return (h ? h + 'h' + dois(m) : m) + ':' + dois(s % 60); }
+  function minutos(ms) { return Math.round(ms / 6000) / 10; }
+
+  /* Etapas validas de um cliente (os DESFEITO anulam a etapa anterior) e o resumo dos tempos. */
+  function estadoCtr(id) {
+    var pilha = [];
+    ((S.ctr && S.ctr.eventos) || []).forEach(function (e) { if (e.id !== id) return; if (e.ev === 'DESFEITO') pilha.pop(); else pilha.push(e); });
+    var r = { ev: pilha, ultimo: pilha.length ? pilha[pilha.length - 1].ev : '', erros: [] };
+    pilha.forEach(function (e) {
+      if (e.ev === 'ENTROU') r.entrou = e.ms;
+      else if (e.ev === 'RECEBEU') r.recebeu = e.ms;
+      else if (e.ev === 'ASSINOU') r.assinou = e.ms;
+      else if (e.ev === 'SAIU') r.saiu = e.ms;
+      else if (e.ev === 'ERRO') r.erros.push({ erro: e.ms });
+      else if (e.ev === 'RECEBEU NOVO' && r.erros.length) r.erros[r.erros.length - 1].novo = e.ms;
+    });
+    r.dia = pilha.length ? diaDoEvento(pilha[0]) : '';
+    return r;
+  }
+  function grupoCtr(u) { return u === 'RECEBEU' || u === 'RECEBEU NOVO' ? 'CONTRATO' : u; }
+  /* Desde quando conta o cronometro de espera, e os limites que valem. */
+  function esperaCtr(st) {
+    if (st.ultimo === 'ENTROU') return { desde: st.entrou, lim: CTR_LIM.ENTROU };
+    if (st.ultimo === 'ERRO') return { desde: st.erros[st.erros.length - 1].erro, lim: CTR_LIM.ERRO };
+    return null;
+  }
+  function corEspera(ms, lim) { var m = ms / 60000; return m >= lim[1] ? 'vermelho' : (m >= lim[0] ? 'laranja' : ''); }
+
+  function diasCtr() {
+    var dias = ((S.atendimento && S.atendimento.dias) || []).slice();
+    ((S.ctr && S.ctr.eventos) || []).forEach(function (e) { var d = diaDoEvento(e); if (d && dias.indexOf(d) < 0) dias.push(d); });
+    if (dias.indexOf(hojeBr()) < 0) dias.push(hojeBr());
+    return dias.sort(function (a, b) { return chaveDia(a) < chaveDia(b) ? -1 : 1; });
+  }
+
+  function carregarContratos(silencioso) {
+    return srv('listarContratos').then(function (r) {
+      S.ctr = r; S.ctrDesvio = r.agora - Date.now();
+      if (S.aba === 'contratos') desenharContratos();
+      if (S.aba === 'ind' && S.modoInd === 'contratos') desenharIndicadores();
+    }).catch(function (e) { if (!silencioso) toast(e.message, true); });
+  }
+
+  function desenharContratos() {
+    if (!S.ctr) { $('#ctr-lista').innerHTML = '<div class="cartao ctr-vazio">Carregando…</div>'; carregarContratos(); return; }
+    var dias = diasCtr();
+    if (!S.ctrDia || dias.indexOf(S.ctrDia) < 0) S.ctrDia = dias.indexOf(hojeBr()) >= 0 ? hojeBr() : dias[dias.length - 1];
+    $('#ctr-dia').innerHTML = dias.map(function (d) { return '<option' + (d === S.ctrDia ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+    var reais = fichasReais();
+    var q = semAcento(S.ctrQ).trim(), qd = q.replace(/\D/g, '');
+    var doDia = reais.filter(function (f) { var st = estadoCtr(f.id); return f.diaAtend === S.ctrDia || st.dia === S.ctrDia; });
+    var lista = q ? reais.filter(function (f) {
+      var txt = semAcento([f.id, f.nome, f.nomeC, f.numFicha ? 'ficha ' + f.numFicha : '', f.corretor, f.imobiliaria].join(' '));
+      return txt.indexOf(q) >= 0 || (qd.length >= 3 && [f.cpf, f.cpfC, f.cnpj, f.numFicha].some(function (v) { return String(v || '').replace(/\D/g, '').indexOf(qd) >= 0; }));
+    }) : doDia;
+    var itens = lista.map(function (f) { return { f: f, st: estadoCtr(f.id) }; });
+    var cont = { todos: itens.length };
+    itens.forEach(function (it) { var g = grupoCtr(it.st.ultimo); cont[g] = (cont[g] || 0) + 1; });
+    $('#ctr-filtro').innerHTML = CTR_FILTROS.map(function (x) {
+      return '<button type="button" data-cf="' + x[0] + '" aria-pressed="' + (S.ctrFiltro === x[0]) + '">' + x[1] + ' (' + (cont[x[0]] || 0) + ')</button>';
+    }).join('');
+    S.ctrDoDia = doDia.map(function (f) { return f.id; });
+    kpisContratos();
+    var ordem = { 'ERRO': 0, 'ENTROU': 1, 'RECEBEU': 2, 'RECEBEU NOVO': 2, '': 3, 'ASSINOU': 4, 'SAIU': 5 };
+
+    var vis = itens.filter(function (it) { return S.ctrFiltro === 'todos' || grupoCtr(it.st.ultimo) === S.ctrFiltro; }).sort(function (a, b) {
+      var oa = ordem[a.st.ultimo], ob = ordem[b.st.ultimo];
+      if (oa !== ob) return oa - ob;
+      var ea = esperaCtr(a.st), eb = esperaCtr(b.st);
+      if (ea && eb) return ea.desde - eb.desde;
+      return (a.f.horaAtend || '99') < (b.f.horaAtend || '99') ? -1 : ((a.f.horaAtend || '99') > (b.f.horaAtend || '99') ? 1 : (a.f.nome < b.f.nome ? -1 : 1));
+    });
+    $('#ctr-lista').innerHTML = vis.length ? vis.map(cartaoCtr).join('')
+      : '<div class="cartao ctr-vazio">' + (q ? 'Nenhuma ficha encontrada com essa busca.' : (itens.length ? 'Ninguém nesta situação.' : 'Nenhum cliente com mesa marcada neste dia. Use a busca para achar o cliente.')) + '</div>';
+    tickContratos();
+  }
+
+  function cartaoCtr(it) {
+    var f = it.f, st = it.st, u = st.ultimo, e = esperaCtr(st);
+    var nomes = { '': 'Ainda não chegou', 'ENTROU': 'Aguardando contrato', 'RECEBEU': 'Com o contrato', 'ERRO': 'Contrato com erro: aguardando contrato novo',
+      'RECEBEU NOVO': 'Com o contrato novo', 'ASSINOU': 'Assinou', 'SAIU': st.assinou ? 'Foi embora' : 'Foi embora sem assinar' };
+    var cls = { '': 0, 'ENTROU': 1, 'RECEBEU': 2, 'RECEBEU NOVO': 2, 'ERRO': 3, 'ASSINOU': 4, 'SAIU': 5 }[u];
+    var info = [f.id, f.numFicha ? 'ficha nº ' + f.numFicha : '', f.diaAtend ? 'mesa ' + f.mesaAtend + ' às ' + f.horaAtend + (f.diaAtend !== S.ctrDia ? ' (' + f.diaAtend + ')' : '') : 'sem mesa marcada',
+      f.corretor ? 'corretor ' + f.corretor : '', f.gerente ? 'gerente ' + rotuloOpcao(f.gerente) : ''].filter(Boolean).join(' · ');
+    var tempo = '';
+    if (e) tempo = '<span class="ctr-tempo" data-desde="' + e.desde + '" data-lim="' + e.lim.join(',') + '"></span><span class="menor">' + (u === 'ERRO' ? 'erro às ' : 'entrou às ') + horaDe(e.desde) + '</span>';
+    else if (u === 'RECEBEU' || u === 'RECEBEU NOVO') { var desde = st.ev[st.ev.length - 1].ms; tempo = '<span class="menor">com o contrato desde ' + horaDe(desde) + ' · esperou ' + relogio(st.recebeu - st.entrou) + ' pelo primeiro</span>'; }
+    else if (u === 'ASSINOU') tempo = '<span class="menor">assinou às ' + horaDe(st.assinou) + ' · ' + relogio(st.assinou - st.entrou) + ' desde a entrada' + (st.erros.length ? ' · ' + st.erros.length + (st.erros.length === 1 ? ' erro' : ' erros') : '') + '</span>';
+    else if (u === 'SAIU') tempo = '<span class="menor">saiu às ' + horaDe(st.saiu) + ' · ' + relogio(st.saiu - st.entrou) + ' no lounge</span>';
+    var acoes = (CTR_PROX[u] || []).map(function (ev) {
+      var b = CTR_BOTAO[ev];
+      return '<button type="button" class="bt ' + b[1] + '" data-ctr="' + ev + '" data-id="' + esc(f.id) + '">' + b[0] + '</button>';
+    }).join('') + (st.ev.length && S.usuario.aprovador ? '<button type="button" class="bt mini" data-ctr-desfazer="' + esc(f.id) + '">Desfazer última etapa</button>' : '');
+    var hist = st.ev.length ? '<details class="ctr-hist"><summary>Etapas (' + st.ev.length + ')</summary><ul>' + st.ev.map(function (x) {
+      return '<li>' + horaDe(x.ms) + ' · ' + esc(CTR_EVENTO[x.ev] || x.ev) + ' · ' + esc(x.por) + '</li>'; }).join('') + '</ul></details>' : '';
+    return '<div class="ctr-card' + (u === 'ERRO' ? ' erro' : '') + '" data-id="' + esc(f.id) + '"><div class="ctr-topo"><b>' + esc(f.nome) + '</b><span class="menor">' + esc(info) + '</span></div>' +
+      '<div class="ctr-estado"><span class="selo ctr-e' + cls + '">' + nomes[u] + '</span>' + tempo + '</div>' +
+      '<div class="ctr-acoes">' + acoes + '</div>' + hist + '</div>';
+  }
+
+  /* Numeros do topo do lounge (recalculados a cada segundo, junto com os cronometros). */
+  function kpisContratos() {
+    var agora = agoraMs();
+    var noDia = (S.ctrDoDia || []).map(estadoCtr);
+    var esperando = noDia.filter(function (st) { return esperaCtr(st); });
+    var k = [
+      ['No lounge agora', noDia.filter(function (st) { return st.ultimo && st.ultimo !== 'SAIU'; }).length, true],
+      ['Aguardando contrato', esperando.length],
+      ['Esperando há 15 min ou mais', esperando.filter(function (st) { var e = esperaCtr(st); return agora - e.desde >= e.lim[0] * 60000; }).length],
+      ['Assinaram', noDia.filter(function (st) { return st.assinou; }).length],
+      ['Contratos com erro', noDia.reduce(function (a, st) { return a + st.erros.length; }, 0)],
+      ['Ainda não chegaram', noDia.filter(function (st) { return !st.ultimo; }).length]
+    ];
+    var html = k.map(function (x) { return '<div class="cartao kpi' + (x[2] ? ' destaque' : '') + '"><div class="n">' + x[1] + '</div><div class="r">' + x[0] + '</div></div>'; }).join('');
+    if ($('#ctr-kpis').innerHTML !== html) $('#ctr-kpis').innerHTML = html;
+  }
+
+  /* Atualiza os cronometros e as cores a cada segundo, sem redesenhar a lista. */
+  function tickContratos() {
+    var agora = agoraMs();
+    if (S.ctrDoDia) kpisContratos();
+    Array.prototype.forEach.call(document.querySelectorAll('#ctr-lista .ctr-tempo[data-desde]'), function (el) {
+      var ms = agora - (+el.dataset.desde), lim = el.dataset.lim.split(',').map(Number);
+      el.textContent = relogio(ms);
+      var card = el.closest('.ctr-card'), cor = corEspera(ms, lim);
+      card.classList.toggle('laranja', cor === 'laranja');
+      card.classList.toggle('vermelho', cor === 'vermelho');
+    });
+  }
+
+  function acaoContrato(ev) {
+    var b = ev.target.closest('[data-ctr], [data-ctr-desfazer]'); if (!b) return;
+    var id = b.dataset.id || b.dataset.ctrDesfazer;
+    Array.prototype.forEach.call(b.closest('.ctr-card').querySelectorAll('button'), function (x) { x.disabled = true; });
+    var chamada = b.hasAttribute('data-ctr') ? srv('registrarContrato', id, b.dataset.ctr) : srv('desfazerContrato', id);
+    chamada.then(function (r) {
+      S.ctr = r; S.ctrDesvio = r.agora - Date.now();
+      var f = S.fichas.filter(function (x) { return x.id === id; })[0];
+      toast((f ? f.nome + ': ' : '') + (b.hasAttribute('data-ctr') ? CTR_EVENTO[b.dataset.ctr] : 'etapa desfeita') + '.');
+      desenharContratos();
+    }).catch(function (e) { toast(e.message, true); carregarContratos(true); });
+  }
+
+  /* ---------- Indicadores do dia dos contratos ---------- */
+  function desenharIndContratos() {
+    if (!S.ctr) { $('#ind-ctr-sub').textContent = 'Carregando…'; carregarContratos(); return; }
+    var ev = S.ctr.eventos || [];
+    var dias = [];
+    ev.forEach(function (e) { var d = diaDoEvento(e); if (d && dias.indexOf(d) < 0) dias.push(d); });
+    dias.sort(function (a, b) { return chaveDia(a) < chaveDia(b) ? -1 : 1; });
+    if (S.indCtrDia === '' || (S.indCtrDia !== '*' && dias.indexOf(S.indCtrDia) < 0)) S.indCtrDia = dias.length ? (dias.indexOf(hojeBr()) >= 0 ? hojeBr() : dias[dias.length - 1]) : '*';
+    $('#ind-ctr-dia').innerHTML = '<option value="*"' + (S.indCtrDia === '*' ? ' selected' : '') + '>Todos os dias</option>' + dias.map(function (d) { return '<option' + (d === S.indCtrDia ? ' selected' : '') + '>' + d + '</option>'; }).join('');
+    var ids = [];
+    ev.forEach(function (e) { if (ids.indexOf(e.id) < 0) ids.push(e.id); });
+    var agora = agoraMs();
+    var lst = ids.map(function (id) { return { f: S.fichas.filter(function (x) { return x.id === id; })[0] || { id: id, nome: id }, st: estadoCtr(id) }; })
+      .filter(function (x) { return x.st.entrou && (S.indCtrDia === '*' || x.st.dia === S.indCtrDia); });
+    var esperas = lst.filter(function (x) { return x.st.recebeu; }).map(function (x) { return x.st.recebeu - x.st.entrou; });
+    var esperaAtual = function (x) { return x.st.recebeu ? x.st.recebeu - x.st.entrou : (x.st.ultimo === 'ENTROU' ? agora - x.st.entrou : null); };
+    var todasEsperas = lst.map(esperaAtual).filter(function (v) { return v !== null; });
+    var assin = lst.filter(function (x) { return x.st.assinou; });
+    var erros = [];
+    lst.forEach(function (x) { x.st.erros.forEach(function (e) { erros.push(e); }); });
+    var reenvio = erros.filter(function (e) { return e.novo; }).map(function (e) { return e.novo - e.erro; });
+    var perm = lst.filter(function (x) { return x.st.saiu; }).map(function (x) { return x.st.saiu - x.st.entrou; });
+    var mMed = function (l) { return l.length ? nota(media(l) / 60000) + ' min' : '—'; };
+    var kpi = function (l) { return l.map(function (x) { return '<div class="cartao kpi' + (x[2] ? ' destaque' : '') + '"><div class="n">' + x[1] + '</div><div class="r">' + x[0] + '</div></div>'; }).join(''); };
+    $('#ind-ctr-sub').textContent = lst.length ? lst.length + (lst.length === 1 ? ' cliente passou' : ' clientes passaram') + ' pelo lounge' + (S.indCtrDia === '*' ? ' em todos os dias.' : ' em ' + S.indCtrDia + '.') : 'Nenhum cliente registrado no lounge' + (S.indCtrDia === '*' ? '.' : ' neste dia.');
+    $('#ind-ctr-kpis').innerHTML = kpi([
+      ['Chegaram ao lounge', lst.length, true],
+      ['Assinaram', assin.length],
+      ['Foram embora sem assinar', lst.filter(function (x) { return x.st.saiu && !x.st.assinou; }).length],
+      ['Contratos com erro', erros.length],
+      ['Espera média pelo contrato', mMed(esperas)],
+      ['Esperaram 20 min ou mais', todasEsperas.filter(function (m) { return m >= 20 * 60000; }).length]
+    ]);
+    $('#ind-ctr-kpis2').innerHTML = kpi([
+      ['Esperaram de 15 a 20 min', todasEsperas.filter(function (m) { return m >= 15 * 60000 && m < 20 * 60000; }).length],
+      ['Tempo médio até assinar', mMed(assin.map(function (x) { return x.st.assinou - x.st.entrou; }))],
+      ['Espera média por contrato novo (após erro)', mMed(reenvio)],
+      ['Tempo médio no lounge', mMed(perm)]
+    ]);
+    var faixas = [['0 a 5 min', 0, 5], ['5 a 10', 5, 10], ['10 a 15', 10, 15], ['15 a 20', 15, 20], ['20 ou mais', 20, 1e9]];
+    var cont = faixas.map(function (fx) { return todasEsperas.filter(function (m) { return m >= fx[1] * 60000 && m < fx[2] * 60000; }).length; });
+    var maxF = Math.max.apply(null, cont.concat([1]));
+    $('#ind-ctr-espera').innerHTML = todasEsperas.length ? '<div class="linhas-b">' + faixas.map(function (fx, i) {
+      var cor = i === 3 ? '#E0821E' : (i === 4 ? '#C62828' : '#400909');
+      return '<div class="lb"><div class="topo-b"><span>' + fx[0] + '</span><span>' + cont[i] + (cont[i] === 1 ? ' cliente' : ' clientes') + '</span></div><div class="trilho"><i style="width:' + (cont[i] / maxF * 100) + '%;background:' + cor + '"></i></div></div>';
+    }).join('') + '</div>' : '<p>Sem esperas registradas.</p>';
+    var horas = {};
+    assin.forEach(function (x) { var h = new Date(x.st.assinou).getHours(); horas[h] = (horas[h] || 0) + 1; });
+    var hs = Object.keys(horas).map(Number).sort(function (a, b) { return a - b; });
+    var serieH = [];
+    if (hs.length) for (var h = hs[0]; h <= hs[hs.length - 1]; h++) serieH.push({ r: dois(h) + 'h', d: '', v: horas[h] || 0 });
+    $('#ind-ctr-hora').innerHTML = serieH.length ? graficoColunasSimples(serieH, larguraDe('#ind-ctr-hora')) : '<p>Nenhuma assinatura registrada.</p>';
+    /* por gerente */
+    var ger = {};
+    lst.forEach(function (x) { var g = x.f.gerente || ''; var y = ger[g] = ger[g] || { n: 0, a: 0, e: 0, esp: [] }; y.n++; if (x.st.assinou) y.a++; y.e += x.st.erros.length; if (x.st.recebeu) y.esp.push(x.st.recebeu - x.st.entrou); });
+    var gs = Object.keys(ger).sort(function (a, b) { return ger[b].n - ger[a].n; });
+    $('#ind-ctr-ger').innerHTML = '<div class="fin-topo"><h3>Por gerente ou sócio</h3></div><div class="tabela-rolo"><table class="t-ctr"><thead><tr><th>Gerente ou sócio</th><th class="num">Clientes</th><th class="num">Assinaram</th><th class="num">Contratos com erro</th><th class="num">Espera média</th></tr></thead><tbody>' +
+      (gs.length ? gs.map(function (g) { var y = ger[g]; return '<tr><td>' + esc(g ? rotuloOpcao(g) : 'Não informado') + '</td><td class="num">' + y.n + '</td><td class="num">' + y.a + '</td><td class="num">' + y.e + '</td><td class="num">' + mMed(y.esp) + '</td></tr>'; }).join('')
+        : '<tr><td colspan="5">Sem clientes.</td></tr>') + '</tbody></table></div>';
+    var linhas = lst.slice().sort(function (a, b) { return (esperaAtual(b) || 0) - (esperaAtual(a) || 0); });
+    $('#ind-ctr-tab').innerHTML = linhas.length ? '<table class="t-ctr"><thead><tr><th>Cliente</th><th>Entrou</th><th class="num">Espera pelo contrato</th><th class="num">Erros</th><th>Assinou</th><th>Saiu</th><th class="num">Tempo no lounge</th></tr></thead><tbody>' +
+      linhas.map(function (x) {
+        var e = esperaAtual(x), cor = e === null ? '' : corEspera(e, CTR_LIM.ENTROU);
+        var fim = x.st.saiu || (x.st.ultimo !== 'SAIU' ? agora : null);
+        return '<tr data-id="' + esc(x.f.id) + '"><td>' + esc(x.f.nome) + '<span class="menor">' + esc(x.f.id) + (S.indCtrDia === '*' ? ' · ' + x.st.dia : '') + '</span></td><td>' + horaDe(x.st.entrou) + '</td>' +
+          '<td class="num ' + cor + '">' + (e === null ? '—' : relogio(e) + (x.st.recebeu ? '' : ' (esperando)')) + '</td><td class="num">' + x.st.erros.length + '</td>' +
+          '<td>' + (x.st.assinou ? horaDe(x.st.assinou) : '—') + '</td><td>' + (x.st.saiu ? horaDe(x.st.saiu) : '—') + '</td><td class="num">' + (fim ? relogio(fim - x.st.entrou) : '—') + '</td></tr>';
+      }).join('') + '</tbody></table>' : '<p style="padding:0 20px 16px">Nenhum cliente.</p>';
+  }
+
+  /* Colunas simples (uma serie), para contagens por hora. */
+  function graficoColunasSimples(serie, W) {
+    var H = 200, f = moldura(serie, W, H);
+    var passo = f.aw / serie.length, lb = Math.min(34, Math.max(4, passo * 0.6));
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Assinaturas por hora">' + f.grade + serie.map(function (p, i) {
+      var cx = f.m.e + passo * i + passo / 2, y = f.py(p.v), h = f.m.t + f.ah - y;
+      return '<g><title>' + p.r + ': ' + p.v + '</title>' + (p.v ? '<rect x="' + (cx - lb / 2) + '" y="' + y + '" width="' + lb + '" height="' + h + '" rx="3" fill="#400909"/><text x="' + cx + '" y="' + (y - 4) + '" text-anchor="middle" style="fill:#1D1D1F;font-weight:600">' + p.v + '</text>' : '') +
+        '<text x="' + cx + '" y="' + (H - 6) + '" text-anchor="middle">' + p.r + '</text></g>';
+    }).join('') + '</svg>';
+  }
+
   /* ---------------- Financeiro: fluxo de recebimento previsto ---------------- */
   var MESES_ABR = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   var CAMPOS_COND = [['desconto', 'Desconto %'], ['entrada', 'Entrada %'], ['comissao', 'Comissão do corretor %'], ['parcelas', 'Nº de parcelas'], ['pctParcelas', '% nas parcelas'], ['saldo', 'Saldo %'], ['mesesSaldo', 'Saldo: meses após a última parcela']];
@@ -2008,9 +2341,35 @@
   ];
   function dim0(id) { return DIMS.filter(function (d) { return d.id === id; })[0]; }
   function emAtd() { return S.modoInd === 'atend'; }
+  function copiaDim(d, extra) { var c = {}; Object.keys(d).forEach(function (k) { c[k] = d[k]; }); Object.keys(extra).forEach(function (k) { c[k] = extra[k]; }); return c; }
+  var ORIGEM = { ATEND: 'Em atendimento', VIROU: 'Atendimento que virou ficha', DIRETA: 'Ficha direta, sem atendimento' };
+  var DIMS_PROC = [
+    { id: 'origem', titulo: 'Origem dos clientes', ops: ['ATEND', 'VIROU', 'DIRETA'], graf: 'rosca',
+      val: function (f) { return ehAtend(f) ? 'ATEND' : (f.viraFichaEm ? 'VIROU' : 'DIRETA'); }, rot: function (v) { return ORIGEM[v] || v; } },
+    copiaDim(dim0('gerente'), { semCartao: true }),
+    copiaDim(dim0('corretor'), { semCartao: true }),
+    copiaDim(dim0('imobiliaria'), { semCartao: true }),
+    dim0('temperatura'), dim0('tamanho'), dim0('pagamento'),
+    { id: 'dia', titulo: 'Dia de entrada', semCartao: true, val: function (f) { return dataEntrada(f); }, rot: function (v) { return v; } }
+  ];
   function ctxInd() {
-    if (emAtd()) return { dims: DIMS_ATD, f: S.fAtd, un: 'atendimento', uns: 'atendimentos' };
-    return S.modoInd === 'processo' ? { dims: DIMS, f: {}, un: 'cliente', uns: 'clientes' } : { dims: DIMS, f: S.fInd, un: 'ficha', uns: 'fichas' };
+    if (emAtd()) return { dims: DIMS_ATD, f: S.fAtd, un: 'atendimento', uns: 'atendimentos', dataDe: diaPrimeiroContato };
+    return S.modoInd === 'processo' ? { dims: DIMS_PROC, f: S.fProc, un: 'cliente', uns: 'clientes', dataDe: dataEntrada }
+      : { dims: DIMS, f: S.fInd, un: 'ficha', uns: 'fichas', dataDe: function (f) { return f.dia; } };
+  }
+  /* Periodo escolhido no topo dos indicadores (vale para todas as visoes, pela data de cada uma). */
+  function noPeriodo(f) {
+    var p = S.periodo;
+    if (!p.de && !p.ate) return true;
+    var k = chaveDia(ctxInd().dataDe(f) || '');
+    if (!k) return false;
+    return (!p.de || k >= p.de.replace(/-/g, '')) && (!p.ate || k <= p.ate.replace(/-/g, ''));
+  }
+  function textoPeriodo() {
+    var p = S.periodo, br = function (iso) { return isoParaBr(iso); };
+    if (!p.de && !p.ate) return '';
+    if (p.de && p.ate) return p.de === p.ate ? ' em ' + br(p.de) : ' de ' + br(p.de) + ' a ' + br(p.ate);
+    return p.de ? ' a partir de ' + br(p.de) : ' até ' + br(p.ate);
   }
   function alternarFiltro(d, v) { var f = ctxInd().f; if (Object.prototype.hasOwnProperty.call(f, d) && f[d] === v) delete f[d]; else f[d] = v; }
   function dim(id) { return ctxInd().dims.filter(function (d) { return d.id === id; })[0]; }
@@ -2026,6 +2385,7 @@
   /* Ficha passa nos filtros ativos (menos o da propria dimensao, para o cartao continuar mostrando todas as opcoes). */
   function passaFiltros(f, exceto) {
     var cx = ctxInd();
+    if (!noPeriodo(f)) return false;
     return cx.dims.every(function (d) {
       if (d.id === exceto || !Object.prototype.hasOwnProperty.call(cx.f, d.id)) return true;
       return valoresDim(d, f).indexOf(cx.f[d.id]) >= 0;
@@ -2034,11 +2394,20 @@
 
   function desenharIndicadores() {
     Array.prototype.forEach.call(document.querySelectorAll('#modo-ind [data-modo]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.modo === S.modoInd)); });
+    var emCtr = S.modoInd === 'contratos';
+    ['#periodo-ind', '#sub-ind', '#kpis', '#dupla-dia', '#quebras'].forEach(function (s) { $(s).hidden = emCtr; });
+    $('#ind-ctr').hidden = !emCtr;
+    if (emCtr) {
+      ['#topo-proc', '#topo-atd', '#vontades-cx', '#funil', '#filtros-ind', '#graficos', '#titulo-detalhe', '#ger-tab', '#meta-ind'].forEach(function (s) { $(s).hidden = true; });
+      return desenharIndContratos();
+    }
     var proc = S.modoInd === 'processo';
     $('#topo-proc').hidden = !proc; $('#topo-atd').hidden = !emAtd(); $('#vontades-cx').hidden = !emAtd();
     $('#funil').hidden = S.modoInd === 'fichas';
-    $('#filtros-ind').hidden = proc; $('#graficos').hidden = proc;
+    $('#filtros-ind').hidden = false; $('#graficos').hidden = false;
     $('#titulo-detalhe').hidden = proc;
+    $('#ger-tab').hidden = S.modoInd === 'fichas';
+    desenharPeriodo(); desenharMeta();
     $('#titulo-detalhe').textContent = emAtd() ? 'Todos os atendimentos (em andamento e que já viraram ficha)' : 'Fichas de interesse';
     if (emAtd()) return desenharIndAtend();
     if (proc) return desenharIndProcesso();
@@ -2061,12 +2430,8 @@
     }).join('');
 
     var ativos = filtrosAtivos();
-    $('#filtros-ind').innerHTML = ativos.length
-      ? '<span class="rot-filtro">Filtrando por</span><div class="filtros">' + ativos.map(function (d) {
-          return '<button type="button" data-limpar="' + d.id + '" aria-pressed="true">' + esc(d.titulo) + ': ' + esc(rotuloDim(d, ctxInd().f[d.id])) + ' ✕</button>';
-        }).join('') + '<button type="button" data-limpar="*">Limpar filtros</button></div>'
-      : '<span class="rot-filtro">Clique em qualquer barra, inclusive em um dia do gráfico, para filtrar os outros indicadores. Dá para combinar vários filtros.</span>';
-    $('#sub-ind').textContent = ativos.length ? base.length + ' de ' + todas.length + ' fichas passam nos filtros.' : todas.length + ' fichas.';
+    desenharBarraFiltros('Clique em qualquer barra, inclusive em um dia do gráfico, para filtrar os outros indicadores. Dá para combinar vários filtros.');
+    $('#sub-ind').textContent = (ativos.length || textoPeriodo() ? base.length + ' de ' + todas.length + ' fichas' + textoPeriodo() + (ativos.length ? ', nos filtros escolhidos' : '') : todas.length + ' fichas') + '. Pela data de recebimento.';
 
     /* Os graficos por dia mostram todos os dias (sem o filtro de dia), com o dia escolhido em destaque. */
     var diaSel = Object.prototype.hasOwnProperty.call(S.fInd, 'dia') ? S.fInd.dia : '';
@@ -2078,8 +2443,6 @@
 
     /* Cada dimensao vira um grafico (colunas ou rosca) ou um cartao de barras; todos filtram os outros ao clicar. */
     var dims = desenharGraficosDims(todas);
-    $('#g-funil').innerHTML = graficoFunil();
-    $('#g-gerentes').innerHTML = graficoGerentes();
 
     $('#quebras').innerHTML = dims.filter(function (c) { return c.tipo === 'lista'; }).map(function (c) { return cartaoLista(c.d, c.x); }).join('') +
       '<div class="cartao graf"><h3>Temperatura média por reunião</h3><p>Nota de 1 a 5, nas fichas do filtro</p><div class="linhas-b">' +
@@ -2094,7 +2457,7 @@
   /* Visao "Processo completo": do primeiro contato a mesa, atendimentos e fichas juntos. Sem filtro cruzado. */
   function dataEntrada(f) { return (ehAtend(f) || f.viraFichaEm) ? diaPrimeiroContato(f) : (f.dia || String(f.digitadoEm || '').slice(0, 10)); }
   function desenharIndProcesso() {
-    var todos = S.fichas, reais = fichasReais();
+    var todos = S.fichas.filter(function (f) { return passaFiltros(f, null); }), reais = todos.filter(function (f) { return !ehAtend(f); });
     var emAtend = todos.filter(ehAtend), viraram = reais.filter(function (f) { return f.viraFichaEm; });
     var passaram = emAtend.length + viraram.length, hoje = hojeBr();
     var kpi = function (l) { return l.map(function (x) {
@@ -2113,23 +2476,89 @@
       ['Fichas sem atendimento antes', reais.length - viraram.length],
       ['Fichas aprovadas', reais.filter(function (f) { return f.status === 'APROVADA'; }).length]
     ]);
-    $('#sub-ind').textContent = todos.length + (todos.length === 1 ? ' cliente registrado' : ' clientes registrados') + ', somando atendimentos e fichas. Mostra sempre o total.';
-    $('#g-funil').innerHTML = graficoFunil();
-    $('#g-gerentes').innerHTML = graficoGerentes();
+    var ativos = filtrosAtivos();
+    $('#sub-ind').textContent = todos.length + (todos.length === 1 ? ' cliente' : ' clientes') + textoPeriodo() + (ativos.length ? ', nos filtros escolhidos' : '') +
+      ', somando atendimentos e fichas. Pela data de entrada: primeiro contato ou recebimento da ficha.';
+    desenharBarraFiltros('Clique em qualquer barra, nome ou dia para filtrar os outros indicadores. Dá para combinar vários filtros.');
+    $('#g-funil').innerHTML = graficoFunil(todos);
+    $('#g-gerentes').innerHTML = graficoGerentes(S.fichas.filter(function (f) { return passaFiltros(f, 'gerente'); }));
+    $('#ger-tab').innerHTML = tabelaGerentes(S.fichas.filter(function (f) { return passaFiltros(f, 'gerente'); }), 'Desempenho por gerente ou sócio', 'Todos os clientes de cada um, nos filtros escolhidos. Clique em uma linha para filtrar.');
     $('#t-dia').textContent = 'Novos clientes por dia'; $('#p-dia').textContent = 'Atendimentos pelo primeiro contato e fichas diretas pela data de recebimento';
     $('#t-acum').textContent = 'Clientes acumulados'; $('#p-acum').textContent = 'Soma desde o primeiro cliente';
-    var serie = seriePorDia(todos, dataEntrada);
+    var diaSel = Object.prototype.hasOwnProperty.call(S.fProc, 'dia') ? S.fProc.dia : '';
+    var serie = seriePorDia(S.fichas.filter(function (f) { return passaFiltros(f, 'dia'); }), dataEntrada);
     var acum = 0;
     var serieAcum = serie.map(function (p) { acum += p.v; return { r: p.r, d: p.d, v: acum, n: p.v }; });
-    $('#g-dia').innerHTML = serie.length ? graficoBarras(serie, larguraDe('#g-dia'), '') : '<p>Nenhum cliente registrado ainda.</p>';
-    $('#g-acum').innerHTML = serie.length ? graficoLinha(serieAcum, larguraDe('#g-acum'), '') : '<p>Nenhum cliente registrado ainda.</p>';
-    $('#graficos').innerHTML = '';
-    var origem = [['Em atendimento', emAtend.length], ['Atendimento que virou ficha', viraram.length], ['Ficha direta, sem atendimento', reais.length - viraram.length]];
-    $('#quebras').innerHTML = cartaoFunil('Atendimentos por corretor', ['corretor', 'corretor2']) + cartaoFunil('Atendimentos por imobiliária', ['imobiliaria', 'imobiliaria2']) +
-      '<div class="cartao graf"><h3>Origem dos clientes</h3><p>Como cada cliente registrado chegou até aqui</p><div class="linhas-b">' + origem.map(function (o) {
-        var pct = todos.length ? Math.round(o[1] / todos.length * 100) : 0;
-        return '<div class="lb"><div class="topo-b"><span>' + o[0] + '</span><span>' + o[1] + ' · ' + pct + '%</span></div><div class="trilho"><i style="width:' + pct + '%"></i></div></div>';
-      }).join('') + '</div></div>';
+    $('#g-dia').innerHTML = serie.length ? graficoBarras(serie, larguraDe('#g-dia'), diaSel) : '<p>Nenhum cliente neste filtro.</p>';
+    $('#g-acum').innerHTML = serie.length ? graficoLinha(serieAcum, larguraDe('#g-acum'), diaSel) : '<p>Nenhum cliente neste filtro.</p>';
+    var dims = desenharGraficosDims(S.fichas);
+    $('#quebras').innerHTML = cartaoFunil('Clientes por corretor', 'corretor', ['corretor', 'corretor2']) + cartaoFunil('Clientes por imobiliária', 'imobiliaria', ['imobiliaria', 'imobiliaria2']) +
+      dims.filter(function (c) { return c.tipo === 'lista'; }).map(function (c) { return cartaoLista(c.d, c.x); }).join('');
+  }
+
+  /* Barra com os filtros ativos da visao atual (clique para tirar). */
+  function desenharBarraFiltros(dica) {
+    var ativos = filtrosAtivos(), fx = ctxInd().f;
+    $('#filtros-ind').innerHTML = ativos.length
+      ? '<span class="rot-filtro">Filtrando por</span><div class="filtros">' + ativos.map(function (d) {
+          return '<button type="button" data-limpar="' + d.id + '" aria-pressed="true">' + esc(d.titulo) + ': ' + esc(rotuloDim(d, fx[d.id])) + ' ✕</button>';
+        }).join('') + '<button type="button" data-limpar="*">Limpar filtros</button></div>'
+      : '<span class="rot-filtro">' + esc(dica) + '</span>';
+  }
+
+  /* Periodo: campos de data e atalhos. */
+  function desenharPeriodo() {
+    var p = S.periodo, hoje = brParaIso(hojeBr());
+    $('#per-de').value = p.de; $('#per-ate').value = p.ate;
+    var ate = function (n) { var d = new Date(); d.setDate(d.getDate() - n); return d.getFullYear() + '-' + dois(d.getMonth() + 1) + '-' + dois(d.getDate()); };
+    var atual = !p.de && !p.ate ? 'tudo' : (p.ate === hoje && p.de === hoje ? 'hoje' : (p.ate === hoje && p.de === ate(6) ? '7' : (p.ate === hoje && p.de === ate(29) ? '30' : '')));
+    Array.prototype.forEach.call(document.querySelectorAll('#per-rapido [data-per]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.per === atual)); });
+  }
+  function periodoRapido(tipo) {
+    var hoje = brParaIso(hojeBr());
+    var ate = function (n) { var d = new Date(); d.setDate(d.getDate() - n); return d.getFullYear() + '-' + dois(d.getMonth() + 1) + '-' + dois(d.getDate()); };
+    if (tipo === 'tudo') S.periodo = { de: '', ate: '' };
+    else if (tipo === 'hoje') S.periodo = { de: hoje, ate: hoje };
+    else S.periodo = { de: ate(+tipo - 1), ate: hoje };
+  }
+
+  /* Meta de novos atendimentos por dia: aparece na visao Atendimentos; administrador altera ali mesmo. */
+  function metaDia() { return (S.atendimento && S.atendimento.meta) || 0; }
+  function desenharMeta() {
+    var cx = $('#meta-ind');
+    cx.hidden = !emAtd() || (!metaDia() && !S.usuario.admin);
+    if (cx.hidden) return;
+    cx.innerHTML = S.usuario.admin
+      ? '<label class="rot-filtro" for="meta-dia">Meta de novos atendimentos por dia</label><input type="number" min="0" step="1" id="meta-dia" value="' + (metaDia() || '') + '" placeholder="sem meta">' +
+        '<button type="button" class="bt mini" id="bt-meta">Salvar meta</button>'
+      : '<span class="rot-filtro">Meta: ' + metaDia() + ' novos atendimentos por dia</span>';
+  }
+
+  /* Desempenho por gerente ou socio (base ja filtrada, menos o filtro de gerente). */
+  function tabelaGerentes(base, titulo, sub) {
+    var nomes = (S.listas['GERENTES'] || []).slice(), m = {};
+    base.forEach(function (f) {
+      var g = f.gerente || '';
+      if (g && nomes.indexOf(g) < 0) nomes.push(g);
+      var x = m[g] = m[g] || { n: 0, a: 0, v: 0, d: 0, temps: [], cont: [], pix: 0 };
+      x.n++;
+      if (ehAtend(f)) x.a++; else if (f.viraFichaEm) x.v++; else x.d++;
+      var tp = +tempAtual(f); if (tp) x.temps.push(tp);
+      if (ehAtend(f) || f.viraFichaEm) x.cont.push(reunioesDe(f).length);
+      if (!ehAtend(f) && f.diaPix) x.pix++;
+    });
+    if (m['']) nomes.push('');
+    var sel = Object.prototype.hasOwnProperty.call(ctxInd().f, 'gerente') ? ctxInd().f.gerente : null;
+    var linhas = nomes.map(function (g) {
+      var x = m[g] || { n: 0, a: 0, v: 0, d: 0, temps: [], cont: [], pix: 0 };
+      var conv = x.a + x.v ? Math.round(x.v / (x.a + x.v) * 100) + '%' : '—';
+      return '<tr data-dim="gerente" data-val="' + esc(g) + '" tabindex="0" role="button" aria-pressed="' + (sel === g) + '"><td>' + esc(g ? rotuloOpcao(g) : 'Não informado') + '</td>' +
+        '<td class="num"><b>' + x.n + '</b></td><td class="num">' + x.a + '</td><td class="num">' + x.v + '</td><td class="num">' + x.d + '</td><td class="num">' + conv + '</td>' +
+        '<td class="num">' + (x.temps.length ? nota(media(x.temps)) : '—') + '</td><td class="num">' + (x.cont.length ? nota(media(x.cont)) : '—') + '</td><td class="num">' + x.pix + '</td></tr>';
+    }).join('');
+    return '<div class="fin-topo"><h3>' + esc(titulo) + '</h3></div><p class="sub" style="margin:0 20px 6px;font-size:13px">' + esc(sub) + '</p><div class="tabela-rolo"><table class="t-ger"><thead><tr>' +
+      '<th>Gerente ou sócio</th><th class="num">Clientes</th><th class="num">Em atendimento</th><th class="num">Viraram ficha</th><th class="num">Fichas diretas</th>' +
+      '<th class="num">Conversão dos atendimentos</th><th class="num">Temperatura média</th><th class="num">Contatos por cliente</th><th class="num">Com PIX</th></tr></thead><tbody>' + linhas + '</tbody></table></div>';
   }
 
   /* Vontades dos clientes ainda em atendimento (respeita os filtros, menos o de situacao). */
@@ -2196,7 +2625,7 @@
       return '<div class="cartao kpi' + (x[2] ? ' destaque' : '') + '"><div class="n">' + x[1] + '</div><div class="r">' + x[0] + '</div></div>'; }).join(''); };
     $('#kpis').innerHTML = kpi([
       [filtrosAtivos().length ? 'Atendimentos no filtro' : 'Atendimentos no total', base.length, true],
-      ['Primeiro contato hoje', base.filter(function (f) { return diaPrimeiroContato(f) === hoje; }).length],
+      [metaDia() ? 'Primeiro contato hoje (meta ' + metaDia() + ')' : 'Primeiro contato hoje', S.fichas.filter(function (f) { return (ehAtend(f) || f.viraFichaEm) && diaPrimeiroContato(f) === hoje; }).length + (metaDia() ? ' / ' + metaDia() : '')],
       ['Em andamento', base.length - viraram.length],
       ['Viraram ficha', viraram.length],
       ['Conversão em ficha', pct(viraram.length, base.length)],
@@ -2218,8 +2647,9 @@
           return '<button type="button" data-limpar="' + d.id + '" aria-pressed="true">' + esc(d.titulo) + ': ' + esc(rotuloDim(d, S.fAtd[d.id])) + ' ✕</button>';
         }).join('') + '<button type="button" data-limpar="*">Limpar filtros</button></div>'
       : '<span class="rot-filtro">Clique em qualquer barra, inclusive em um dia do gráfico, para filtrar os outros indicadores de atendimento. Dá para combinar vários filtros.</span>';
-    $('#sub-ind').textContent = ativos.length ? base.length + ' de ' + todos.length + ' atendimentos passam nos filtros.'
-      : todos.length + (todos.length === 1 ? ' cliente passou' : ' clientes passaram') + ' pela etapa de atendimento (em andamento ou que já viraram ficha).';
+    $('#sub-ind').textContent = (ativos.length || textoPeriodo() ? base.length + ' de ' + todos.length + ' atendimentos' + textoPeriodo() + (ativos.length ? ', nos filtros escolhidos' : '') + '.'
+      : todos.length + (todos.length === 1 ? ' cliente passou' : ' clientes passaram') + ' pela etapa de atendimento (em andamento ou que já viraram ficha).') + ' Pela data do primeiro contato.';
+    $('#ger-tab').innerHTML = tabelaGerentes(todos.filter(function (f) { return passaFiltros(f, 'gerente'); }), 'Atendimentos por gerente ou sócio', 'Nos filtros escolhidos. Clique em uma linha para filtrar.');
 
     $('#t-dia').textContent = 'Novos atendimentos por dia'; $('#p-dia').textContent = 'Pela data do primeiro contato. Clique em um dia para filtrar.';
     $('#t-acum').textContent = 'Atendimentos acumulados'; $('#p-acum').textContent = 'Soma desde o primeiro atendimento';
@@ -2227,7 +2657,11 @@
     var serie = seriePorDia(todos.filter(function (f) { return passaFiltros(f, 'dia'); }), diaPrimeiroContato);
     var acum = 0;
     var serieAcum = serie.map(function (p) { acum += p.v; return { r: p.r, d: p.d, v: acum, n: p.v }; });
-    $('#g-dia').innerHTML = serie.length ? graficoBarras(serie, larguraDe('#g-dia'), diaSel) : '<p>Nenhum atendimento neste filtro.</p>';
+    if (metaDia() && serie.length) {
+      var bateram = serie.filter(function (p) { return p.v >= metaDia(); }).length;
+      $('#p-dia').textContent = 'Pela data do primeiro contato. Linha tracejada: meta de ' + metaDia() + ' por dia. Bateu a meta em ' + bateram + ' de ' + serie.length + (serie.length === 1 ? ' dia.' : ' dias.');
+    }
+    $('#g-dia').innerHTML = serie.length ? graficoBarras(serie, larguraDe('#g-dia'), diaSel, metaDia()) : '<p>Nenhum atendimento neste filtro.</p>';
     $('#g-acum').innerHTML = serie.length ? graficoLinha(serieAcum, larguraDe('#g-acum'), diaSel) : '<p>Nenhum atendimento neste filtro.</p>';
 
     var dims = desenharGraficosDims(todos);
@@ -2265,14 +2699,14 @@
     var extras = Object.keys(cont).filter(function (v) { return v !== '' && ordem.indexOf(v) < 0; })
       .sort(function (a, b) { return cont[b] - cont[a] || (a < b ? -1 : 1); });
     ordem = ordem.concat(extras);
-    var cortados = 0;
-    if (d.top && ordem.length > d.top) { cortados = ordem.length - d.top; ordem = ordem.slice(0, d.top); }
+    var cortados = 0, totalOps = ordem.length;
+    if (d.top && !S.verTodas[d.id] && ordem.length > d.top) { cortados = ordem.length - d.top; ordem = ordem.slice(0, d.top); }
     var fx = ctxInd().f;
     var sel = Object.prototype.hasOwnProperty.call(fx, d.id) ? fx[d.id] : null;
     if (sel !== null && sel !== '' && ordem.indexOf(sel) < 0) ordem.push(sel);
     var linhas = ordem.map(function (v, i) { return { v: v, n: cont[v] || 0, i: i }; });
     if (cont[''] || sel === '') linhas.push({ v: '', n: cont[''] || 0, ni: true });
-    return { total: doCartao.length, linhas: linhas, sel: sel, cortados: cortados };
+    return { total: doCartao.length, linhas: linhas, sel: sel, cortados: cortados, totalOps: totalOps };
   }
 
   function cartaoLista(d, x) {
@@ -2285,7 +2719,7 @@
           '<span class="topo-b"><span>' + esc(rotuloDim(d, l.v)) + '</span><span>' + l.n + ' · ' + pct + '%</span></span>' +
           '<span class="trilho"><i style="width:' + (l.n / max * 100) + '%"></i></span></button>';
       }).join('') : '<p>Sem dados.</p>') +
-      (x.cortados ? '<p class="resto">+ ' + x.cortados + ' com menos fichas</p>' : '') + '</div></div>';
+      (d.top && x.totalOps > d.top ? '<button type="button" class="ver-todas" data-ver="' + d.id + '">' + (S.verTodas[d.id] ? 'Mostrar só as ' + d.top + ' maiores' : 'Ver todas (' + x.totalOps + ')') + '</button>' : '') + '</div></div>';
   }
 
   /* ----- Graficos ----- */
@@ -2357,15 +2791,15 @@
   }
 
   /* Funil: etapas em sequencia, cada uma contida na anterior. Barras centralizadas, uma cor so. */
-  function graficoFunil() {
-    var reais = fichasReais();
+  function graficoFunil(base) {
+    var reais = base.filter(function (f) { return !ehAtend(f); });
     var comPix = reais.filter(function (f) { return f.diaPix; });
     var comOrdem = comPix.filter(function (f) { return f.ordemFinal; });
     var comMesa = comOrdem.filter(function (f) { return f.diaAtend; });
-    var etapas = [['Clientes registrados', S.fichas.length], ['Com ficha de interesse', reais.length], ['Com PIX', comPix.length],
+    var etapas = [['Clientes registrados', base.length], ['Com ficha de interesse', reais.length], ['Com PIX', comPix.length],
       ['Com ordem final', comOrdem.length], ['Com mesa marcada', comMesa.length]];
     var topo = etapas[0][1];
-    if (!topo) return '<p>Nenhum cliente registrado ainda.</p>';
+    if (!topo) return '<p>Nenhum cliente neste filtro.</p>';
     return '<div class="funil-g">' + etapas.map(function (e, i) {
       var pct = Math.round(e[1] / topo * 100);
       var anterior = i ? etapas[i - 1][1] : 0;
@@ -2377,13 +2811,14 @@
   }
 
   /* Gerentes e socios: barras empilhadas com 3 series (legenda sempre presente; total na ponta). */
-  function graficoGerentes() {
-    if (!S.fichas.length) return '<p>Nenhum cliente registrado ainda.</p>';
+  function graficoGerentes(base) {
+    if (!base.length) return '<p>Nenhum cliente neste filtro.</p>';
+    var sel = Object.prototype.hasOwnProperty.call(S.fProc, 'gerente') ? S.fProc.gerente : null;
     var series = ['Em atendimento', 'Virou ficha', 'Ficha direta'];
     var cores = [CORES_SERIE[2], CORES_SERIE[0], CORES_SERIE[1]];
     var nomes = (S.listas['GERENTES'] || []).slice();
     var m = {};
-    S.fichas.forEach(function (f) {
+    base.forEach(function (f) {
       var g = f.gerente || '';
       if (g && nomes.indexOf(g) < 0) nomes.push(g);
       m[g] = m[g] || [0, 0, 0];
@@ -2396,7 +2831,7 @@
       '<div class="empilhadas">' + nomes.map(function (n) {
         var v = m[n] || [0, 0, 0];
         var nome = n || 'Não informado';
-        return '<div class="emp"><span class="nome">' + esc(nome) + '</span><span class="pista">' + v.map(function (q, i) {
+        return '<div class="emp" data-dim="gerente" data-val="' + esc(n) + '" role="button" tabindex="0" aria-pressed="' + (sel === n) + '"><span class="nome">' + esc(rotuloOpcao(nome)) + '</span><span class="pista">' + v.map(function (q, i) {
           return q ? '<i style="width:calc(' + (q / max * 100) + '% - 2px);background:' + cores[i] + '" title="' + esc(nome + ' · ' + series[i] + ': ' + q) + '"></i>' : '';
         }).join('') + '</span><span class="tot">' + total(n) + '</span></div>';
       }).join('') + '</div>';
@@ -2414,26 +2849,29 @@
       ['Fichas sem atendimento antes', fichas.length - viraram.length]
     ].map(function (x) { return '<div class="cartao kpi"><div class="n">' + x[1] + '</div><div class="r">' + x[0] + '</div></div>'; }).join('');
   }
-  function cartaoFunil(titulo, chaves) {
-    var m = {};
-    S.fichas.forEach(function (f) {
-      var atd = ehAtend(f);
-      if (!atd && !f.viraFichaEm) return;
-      chaves.map(function (k) { return f[k]; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).forEach(function (v) {
-        m[v] = m[v] || { a: 0, v: 0 };
-        if (atd) m[v].a++; else m[v].v++;
-      });
+  function cartaoFunil(titulo, dimId, chaves) {
+    var m = {}, sel = Object.prototype.hasOwnProperty.call(S.fProc, dimId) ? S.fProc[dimId] : null;
+    S.fichas.filter(function (f) { return passaFiltros(f, dimId); }).forEach(function (f) {
+      var atd = ehAtend(f), tipo = atd ? 'a' : (f.viraFichaEm ? 'v' : 'd');
+      var vs = chaves.map(function (k) { return f[k]; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+      if (!vs.length) vs = [''];
+      vs.forEach(function (v) { m[v] = m[v] || { a: 0, v: 0, d: 0 }; m[v][tipo]++; });
     });
-    var nomes = Object.keys(m).sort(function (a, b) { return (m[b].a + m[b].v) - (m[a].a + m[a].v) || (a < b ? -1 : 1); });
-    var cortados = Math.max(0, nomes.length - 10);
-    nomes = nomes.slice(0, 10);
-    var max = Math.max.apply(null, nomes.map(function (n) { return m[n].a + m[n].v; }).concat([1]));
-    return '<div class="cartao graf"><h3>' + esc(titulo) + '</h3><p>Em atendimento e já convertidos em ficha</p><div class="linhas-b">' +
+    var tot = function (n) { return m[n].a + m[n].v + m[n].d; };
+    var nomes = Object.keys(m).filter(function (n) { return n; }).sort(function (a, b) { return tot(b) - tot(a) || (a < b ? -1 : 1); });
+    if (m['']) nomes.push('');
+    var todas = !!S.verTodas[dimId], total = nomes.length;
+    if (!todas && nomes.length > 10) nomes = nomes.slice(0, 10);
+    if (sel !== null && nomes.indexOf(sel) < 0 && m[sel]) nomes.push(sel);
+    var max = Math.max.apply(null, nomes.map(tot).concat([1]));
+    return '<div class="cartao graf' + (sel !== null ? ' filtrado' : '') + '"><h3>' + esc(titulo) + '</h3><p>Em atendimento, que viraram ficha e fichas diretas. Clique para filtrar.</p><div class="linhas-b">' +
       (nomes.length ? nomes.map(function (n) {
-        return '<div class="lb"><div class="topo-b"><span>' + esc(n) + '</span><span>' + m[n].a + ' em atendimento · ' + m[n].v + (m[n].v === 1 ? ' virou ficha' : ' viraram ficha') + '</span></div>' +
-          '<div class="trilho"><i style="width:' + ((m[n].a + m[n].v) / max * 100) + '%"></i></div></div>';
-      }).join('') : '<p>Nenhum atendimento registrado.</p>') +
-      (cortados ? '<p class="resto">+ ' + cortados + ' com menos atendimentos</p>' : '') + '</div></div>';
+        var x = m[n];
+        return '<button type="button" class="lb' + (n ? '' : ' ni') + '" data-dim="' + dimId + '" data-val="' + esc(n) + '" aria-pressed="' + (sel === n) + '"><span class="topo-b"><span>' + esc(n || 'Não informado') + '</span><span>' + tot(n) + ' · ' +
+          x.a + ' em atend. · ' + x.v + ' viraram · ' + x.d + ' diretas</span></span>' +
+          '<span class="trilho"><i style="width:' + (tot(n) / max * 100) + '%"></i></span></button>';
+      }).join('') : '<p>Nenhum cliente neste filtro.</p>') +
+      (total > 10 ? '<button type="button" class="ver-todas" data-ver="' + dimId + '">' + (todas ? 'Mostrar só as 10 maiores' : 'Ver todas (' + total + ')') + '</button>' : '') + '</div></div>';
   }
   function filtrosAtivos() { var cx = ctxInd(); return cx.dims.filter(function (d) { return Object.prototype.hasOwnProperty.call(cx.f, d.id); }); }
 
@@ -2468,9 +2906,9 @@
     return { topo: topo, marcas: marcas };
   }
 
-  function moldura(serie, W, H) {
+  function moldura(serie, W, H, minimo) {
     var m = { e: 30, d: 14, t: 24, b: 24 };
-    var max = Math.max.apply(null, serie.map(function (p) { return p.v; }));
+    var max = Math.max.apply(null, serie.map(function (p) { return p.v; }).concat([minimo || 0]));
     var y = escalaY(max);
     var aw = W - m.e - m.d, ah = H - m.t - m.b;
     var py = function (v) { return m.t + ah - (v / y.topo) * ah; };
@@ -2489,8 +2927,8 @@
       '<title>' + esc(p.d) + ': ' + nFichas(n) + '. Clique para filtrar.</title></rect>';
   }
 
-  function graficoBarras(serie, W, sel) {
-    var H = 220, f = moldura(serie, W, H);
+  function graficoBarras(serie, W, sel, meta) {
+    var H = 220, f = moldura(serie, W, H, meta);
     var passo = f.aw / serie.length;
     var lb = Math.min(34, Math.max(2, passo * 0.68));
     var corpo = serie.map(function (p, i) {
@@ -2504,7 +2942,9 @@
       if (p.v) s += alvoDia(p, f.m.e + passo * i, f.m.t, passo, f.ah + f.m.b, p.v);
       return s;
     }).join('');
-    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Fichas por dia">' + f.grade + corpo + '</svg>';
+    var linhaMeta = meta ? '<line x1="' + f.m.e + '" x2="' + (W - f.m.d) + '" y1="' + f.py(meta) + '" y2="' + f.py(meta) + '" stroke="#B9822A" stroke-width="2" stroke-dasharray="6 4"/>' +
+      '<text x="' + (W - f.m.d) + '" y="' + (f.py(meta) - 5) + '" text-anchor="end" style="fill:#8A5F17;font-weight:600">Meta ' + meta + '</text>' : '';
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Por dia">' + f.grade + corpo + linhaMeta + '</svg>';
   }
 
   function graficoLinha(serie, W, sel) {
@@ -2889,7 +3329,12 @@
     }).join('');
   }
 
+  function opcoesRenomear() {
+    $('#ren-de').innerHTML = (S.listas['GERENTES'] || []).map(function (g) { return '<option value="' + esc(g) + '">' + esc(g) + '</option>'; }).join('');
+  }
+
   function carregarUsuarios() {
+    opcoesRenomear();
     return srv('listarUsuarios').then(desenharUsuarios).catch(function (e) { toast(e.message, true); });
   }
 
@@ -2913,6 +3358,25 @@
       bt.disabled = true;
       gravarUsuario({ email: email, nome: $('#nu-nome').value.trim(), papel: $('#nu-papel').value, liberado: true }, 'Acesso liberado para ' + email + '.')
         .then(function (deuCerto) { bt.disabled = false; if (deuCerto) { $('#form-usuario').reset(); $('#nu-papel').value = 'DIGITADOR'; } });
+    });
+    $('#form-renomear').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var de = $('#ren-de').value, para = $('#ren-para').value.trim();
+      if (!para) { toast('Informe o novo nome.', true); $('#ren-para').focus(); return; }
+      var bt = $('#bt-renomear');
+      bt.disabled = true;
+      srv('renomearOpcaoLista', 'GERENTES', de, para).then(function (r) {
+        S.listas = r.listas; S.fichas = r.fichas; toast(r.mensagem); $('#ren-para').value = '';
+        /* Troca a opcao no formulario aberto, sem recarregar a pagina. */
+        var novo = para.replace(/\s+/g, ' ').toUpperCase(), cg = campo('gerente');
+        Array.prototype.forEach.call(document.querySelectorAll('input[name="f_gerente"]'), function (i) {
+          if (i.value !== de) return;
+          var marcado = i.checked, lab = i.closest('label');
+          lab.outerHTML = chipHtml(cg, novo);
+          if (marcado) { var n = document.querySelector('input[name="f_gerente"][value="' + novo.replace(/"/g, '') + '"]'); if (n) { n.checked = true; n.dataset.on = '1'; } }
+        });
+        opcoesRenomear(); atualizarTudo(); bt.disabled = false;
+      }).catch(function (e) { toast(e.message, true); bt.disabled = false; });
     });
     $('#linhas-usuarios').addEventListener('change', function (ev) {
       if (!ev.target.matches('.sel-papel')) return;
@@ -2940,7 +3404,7 @@
   /* ---------------- Navegacao ---------------- */
   function irPara(aba) {
     S.aba = aba;
-    ['clientes', 'nova', 'fichas', 'fila', 'atend', 'ind', 'fin', 'usuarios'].forEach(function (a) { $('#v-' + a).hidden = a !== aba; });
+    ['clientes', 'nova', 'fichas', 'fila', 'atend', 'contratos', 'ind', 'fin', 'usuarios'].forEach(function (a) { $('#v-' + a).hidden = a !== aba; });
     /* O formulario no modo atendimento pertence a aba Atendimentos. */
     var marcada = aba === 'nova' && S.modo === 'ATEND' ? 'clientes' : aba;
     Array.prototype.forEach.call(document.querySelectorAll('.abas button'), function (b) {
@@ -2948,6 +3412,7 @@
     });
     if (aba === 'ind') desenharIndicadores();
     if (aba === 'fin') desenharFinanceiro(true);
+    if (aba === 'contratos') { desenharContratos(); if (S.ctr) carregarContratos(true); }
     if (aba === 'fichas') desenharLista();
     if (aba === 'atend') desenharAtendimentos();
     if (aba === 'clientes') desenharClientes();
@@ -2959,6 +3424,7 @@
     desenharLista();
     if (S.aba === 'ind') desenharIndicadores();
     if (S.aba === 'fin') desenharFinanceiro();
+    if (S.aba === 'contratos') desenharContratos();
     if (S.aba === 'atend') desenharAtendimentos();
     if (S.aba === 'clientes') desenharClientes();
     if (S.aba === 'fila') desenharFila();
@@ -3014,31 +3480,50 @@
       S.status = b.dataset.status; desenharLista();
     });
     $('#ordenar').addEventListener('change', function (ev) { S.ordem = ev.target.value; desenharLista(); });
-    $('#quebras').addEventListener('click', function (ev) {
-      var b = ev.target.closest('button[data-dim]'); if (!b) return;
-      alternarFiltro(b.dataset.dim, b.dataset.val);
-      desenharIndicadores();
-    });
-    /* Graficos: colunas, fatias e legenda filtram como os cartoes (o botao da legenda ja responde ao teclado sozinho). */
-    var filtrarGrafico = function (ev) {
-      var alvo = ev.target.closest && ev.target.closest('[data-dim]');
-      if (!alvo) return;
+    /* Indicadores: qualquer barra, fatia, nome, linha ou dia com data-dim/data-dia filtra; "Ver todas" abre a lista inteira. */
+    var cliqueInd = function (ev) {
+      var alvo = ev.target.closest && ev.target.closest('[data-ver], [data-dim], [data-dia]');
+      if (!alvo || !$('#v-ind').contains(alvo) || alvo.closest('#vontades')) return;
       if (ev.type === 'keydown' && (alvo.tagName === 'BUTTON' || (ev.key !== 'Enter' && ev.key !== ' '))) return;
       ev.preventDefault();
-      alternarFiltro(alvo.getAttribute('data-dim'), alvo.getAttribute('data-val'));
+      if (alvo.hasAttribute('data-ver')) { var k = alvo.getAttribute('data-ver'); S.verTodas[k] = !S.verTodas[k]; }
+      else if (alvo.hasAttribute('data-dia')) alternarFiltro('dia', alvo.getAttribute('data-dia'));
+      else alternarFiltro(alvo.getAttribute('data-dim'), alvo.getAttribute('data-val'));
       desenharIndicadores();
     };
-    $('#graficos').addEventListener('click', filtrarGrafico);
-    $('#graficos').addEventListener('keydown', filtrarGrafico);
-    var filtrarDia = function (ev) {
-      var alvo = ev.target.closest && ev.target.closest('[data-dia]');
-      if (!alvo || (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ')) return;
-      ev.preventDefault();
-      if (S.modoInd === 'processo') return;
-      alternarFiltro('dia', alvo.dataset.dia);
-      desenharIndicadores();
-    };
-    ['#g-dia', '#g-acum'].forEach(function (g) { $(g).addEventListener('click', filtrarDia); $(g).addEventListener('keydown', filtrarDia); });
+    $('#v-ind').addEventListener('click', cliqueInd);
+    $('#v-ind').addEventListener('keydown', cliqueInd);
+    $('#per-rapido').addEventListener('click', function (ev) {
+      var b = ev.target.closest('button[data-per]'); if (!b) return;
+      periodoRapido(b.dataset.per); desenharIndicadores();
+    });
+    ['#per-de', '#per-ate'].forEach(function (sel) {
+      $(sel).addEventListener('change', function () {
+        S.periodo = { de: $('#per-de').value, ate: $('#per-ate').value };
+        if (S.periodo.de && S.periodo.ate && S.periodo.de > S.periodo.ate) S.periodo = { de: S.periodo.ate, ate: S.periodo.de };
+        desenharIndicadores();
+      });
+    });
+    $('#ctr-lista').addEventListener('click', acaoContrato);
+    $('#ctr-dia').addEventListener('change', function (ev) { S.ctrDia = ev.target.value; desenharContratos(); });
+    $('#ctr-busca').addEventListener('input', function (ev) { S.ctrQ = ev.target.value; desenharContratos(); });
+    $('#ctr-atualizar').addEventListener('click', function () { carregarContratos(); });
+    $('#ctr-filtro').addEventListener('click', function (ev) {
+      var b = ev.target.closest('button[data-cf]'); if (!b) return;
+      S.ctrFiltro = b.dataset.cf; desenharContratos();
+    });
+    $('#ind-ctr-dia').addEventListener('change', function (ev) { S.indCtrDia = ev.target.value; desenharIndicadores(); });
+    $('#ind-ctr-tab').addEventListener('click', function (ev) { var tr = ev.target.closest('tr[data-id]'); if (tr && S.fichas.some(function (f) { return f.id === tr.dataset.id; })) abrirPainel(tr.dataset.id); });
+    /* Cronometros a cada segundo; lista do lounge recarregada do servidor a cada 15 segundos enquanto a aba estiver aberta. */
+    setInterval(function () { if (S.aba === 'contratos') tickContratos(); }, 1000);
+    setInterval(function () { if (S.aba === 'contratos' && !document.hidden && S.ctr) carregarContratos(true); }, 15000);
+    $('#meta-ind').addEventListener('click', function (ev) {
+      var b = ev.target.closest('#bt-meta'); if (!b) return;
+      b.disabled = true;
+      srv('salvarMetaAtendimento', $('#meta-dia').value.trim()).then(function (r) {
+        S.atendimento = r.atendimento; toast(r.mensagem); desenharIndicadores();
+      }).catch(function (e) { toast(e.message, true); b.disabled = false; });
+    });
     $('#filtros-ind').addEventListener('click', function (ev) {
       var b = ev.target.closest('button[data-limpar]'); if (!b) return;
       var fx = ctxInd().f;
