@@ -359,6 +359,9 @@
   .t-ctr .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .t-ctr td.laranja { color: #B35F00; font-weight: 600; }
   .t-ctr td.vermelho { color: #C62828; font-weight: 700; }
+  .filtros-cli { gap: 8px; flex-wrap: wrap; }
+  .filtros-cli .seletor { flex: 1 1 200px; min-width: 0; max-width: 320px; }
+  .filtros-cli .seletor.ativo { border-color: var(--marca); background: var(--marca-clara); font-weight: 600; }
   .meta-ind { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .meta-ind input { border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; font: inherit; background: var(--branco); }
   .meta-ind input[type=number] { width: 90px; }
@@ -527,6 +530,12 @@
           <option value="gerente">Por gerente ou sócio</option>
         </select>
         <button type="button" class="bt pri" id="bt-novo-atend">Novo atendimento</button>
+      </div>
+      <div class="barra filtros-cli" id="filtros-cli">
+        <select id="fcli-imobiliaria" class="seletor" data-fcli="imobiliaria" aria-label="Filtrar por imobiliária"></select>
+        <select id="fcli-corretor" class="seletor" data-fcli="corretor" aria-label="Filtrar por corretor"></select>
+        <select id="fcli-gerente" class="seletor" data-fcli="gerente" aria-label="Filtrar por gerente ou sócio"></select>
+        <button type="button" class="bt mini" id="fcli-limpar" hidden>Limpar filtros</button>
       </div>
       <div class="cartao">
         <div class="tabela-rolo">
@@ -789,7 +798,7 @@
 
   var S = { usuario: null, campos: [], listas: {}, fichas: [], atendimento: null, q: '', status: 'TODAS', ordem: 'recentes', editId: null, aberta: null,
     ctr: null, ctrDia: '', ctrFiltro: 'todos', ctrQ: '', ctrDesvio: 0, indCtrDia: '', fInd: {}, fAtd: {}, fProc: {}, periodo: { de: '', ate: '' }, verTodas: {}, modoInd: 'processo', fin: null, finEscopo: 'todos', finVisao: 'clientes', diaAtend: '', filaSel: null, cfgDias: [], corretores: {}, reuEdit: null, aba: 'nova',
-    modo: 'FICHA', converter: false, qCli: '', ordemCli: 'recentes' };
+    modo: 'FICHA', converter: false, qCli: '', ordemCli: 'recentes', fCli: { imobiliaria: '', corretor: '', gerente: '' } };
   var LARGOS = { nome: 1, nomeC: 1, endereco: 1, enderecoC: 1, email: 1, emailC: 1, corretor: 1, corretor2: 1, imobiliaria: 1, imobiliaria2: 1, pixCorretor: 1, pixCorretor2: 1 };
   var TOTAIS = { pagamento: 1, gerente: 1 };
   var NOME_STATUS = { 'EM ATENDIMENTO': 'Em atendimento', PENDENTE: 'Pendente', APROVADA: 'Aprovada', DEVOLVIDA: 'Devolvida' };
@@ -3060,11 +3069,41 @@
   }
 
   /* ---------------- Atendimentos: clientes em atendimento, antes da ficha ---------------- */
+  /* Filtros da aba Atendimentos: imobiliaria e corretor contam o 1o e o 2o. */
+  var FCLI = {
+    imobiliaria: { nome: 'Todas as imobiliárias', campos: ['imobiliaria', 'imobiliaria2'] },
+    corretor: { nome: 'Todos os corretores', campos: ['corretor', 'corretor2'] },
+    gerente: { nome: 'Todos os gerentes e sócios', campos: ['gerente'] }
+  };
+  function valoresFcli(k, f) {
+    var vs = FCLI[k].campos.map(function (c) { return f[c]; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+    return vs.length ? vs : [''];
+  }
+  function passaFcli(f, exceto) {
+    return Object.keys(FCLI).every(function (k) { return k === exceto || !S.fCli[k] || valoresFcli(k, f).indexOf(S.fCli[k] === '-' ? '' : S.fCli[k]) >= 0; });
+  }
+  function desenharFiltrosCli(todos) {
+    Object.keys(FCLI).forEach(function (k) {
+      var cont = {};
+      todos.filter(function (f) { return passaFcli(f, k); }).forEach(function (f) { valoresFcli(k, f).forEach(function (v) { cont[v] = (cont[v] || 0) + 1; }); });
+      var nomes = Object.keys(cont).filter(Boolean).sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); });
+      var sel = S.fCli[k];
+      if (sel && sel !== '-' && nomes.indexOf(sel) < 0) nomes.push(sel);
+      $('#fcli-' + k).innerHTML = '<option value="">' + FCLI[k].nome + '</option>' + nomes.map(function (n) {
+        return '<option value="' + esc(n) + '"' + (n === sel ? ' selected' : '') + '>' + esc(k === 'gerente' ? rotuloOpcao(n) : n) + ' (' + (cont[n] || 0) + ')</option>';
+      }).join('') + (cont[''] || sel === '-' ? '<option value="-"' + (sel === '-' ? ' selected' : '') + '>Não informado (' + (cont[''] || 0) + ')</option>' : '');
+      $('#fcli-' + k).classList.toggle('ativo', !!sel);
+    });
+    $('#fcli-limpar').hidden = !Object.keys(FCLI).some(function (k) { return S.fCli[k]; });
+  }
+
   function desenharClientes() {
     var todos = S.fichas.filter(ehAtend);
     var q = semAcento(S.qCli).trim();
     var qd = q.replace(/\D/g, '');
+    desenharFiltrosCli(todos);
     var lista = todos.filter(function (f) {
+      if (!passaFcli(f)) return false;
       if (!q) return true;
       var texto = semAcento([f.id, f.nome, f.nomeC, f.email, f.corretor, f.corretor2, f.imobiliaria, f.imobiliaria2, f.gerente, f.cpf, f.cnpj, f.celular].join(' '));
       if (texto.indexOf(q) >= 0) return true;
@@ -3096,7 +3135,7 @@
     }).join('');
     var vazio = $('#vazio-cli');
     vazio.hidden = lista.length > 0;
-    vazio.textContent = todos.length ? 'Nenhum atendimento encontrado com essa busca.' : 'Nenhum cliente em atendimento. Use "Novo atendimento" para registrar o primeiro.';
+    vazio.textContent = todos.length ? 'Nenhum atendimento encontrado com essa busca ou esses filtros.' : 'Nenhum cliente em atendimento. Use "Novo atendimento" para registrar o primeiro.';
   }
 
   /* ---------------- Fila: fichas na ordem do PIX, para definir a ordem final ---------------- */
@@ -3147,6 +3186,8 @@
     $('#bt-novo-atend').addEventListener('click', novoAtendimento);
     $('#busca-cli').addEventListener('input', function (ev) { S.qCli = ev.target.value; desenharClientes(); });
     $('#ordenar-cli').addEventListener('change', function (ev) { S.ordemCli = ev.target.value; desenharClientes(); });
+    $('#filtros-cli').addEventListener('change', function (ev) { var k = ev.target.dataset.fcli; if (!k) return; S.fCli[k] = ev.target.value; desenharClientes(); });
+    $('#fcli-limpar').addEventListener('click', function () { S.fCli = { imobiliaria: '', corretor: '', gerente: '' }; desenharClientes(); });
     $('#linhas-cli').addEventListener('click', function (ev) {
       var virar = ev.target.closest('button[data-virar]');
       if (virar) return transformarEmFicha(S.fichas.filter(function (x) { return x.id === virar.dataset.virar; })[0]);
