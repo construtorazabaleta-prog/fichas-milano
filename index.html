@@ -445,6 +445,7 @@
   }
 
   /* Usuarios */
+  #form-renomear { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) minmax(0, 1.6fr) auto; }
   .novo-usuario { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1.3fr) auto; gap: 14px 16px; align-items: end; padding: 18px 20px; margin-bottom: 12px; }
   .novo-usuario .bt { min-height: 40px; }
   .t-usuarios tbody tr { cursor: default; }
@@ -762,7 +763,9 @@
         <button type="submit" class="bt pri" id="bt-add-usuario">Liberar acesso</button>
       </form>
       <form id="form-renomear" class="cartao novo-usuario" novalidate autocomplete="off">
-        <div class="campo"><label class="rot" for="ren-de">Renomear gerente ou sócio</label><select id="ren-de"></select></div>
+        <div class="campo"><label class="rot" for="ren-lista">Renomear opção de</label><select id="ren-lista">
+          <option value="GERENTES">Gerente ou sócio</option><option value="TAMANHO APTO">Tamanho do apto</option><option value="GARAGEM">Garagem</option></select></div>
+        <div class="campo"><label class="rot" for="ren-de">Opção atual</label><select id="ren-de"></select></div>
         <div class="campo"><label class="rot" for="ren-para">Novo nome</label><input type="text" id="ren-para" maxlength="80"></div>
         <button type="submit" class="bt" id="bt-renomear">Renomear em todos os registros</button>
       </form>
@@ -3459,8 +3462,10 @@
     }).join('');
   }
 
+  /* Listas que o administrador pode renomear e o campo das fichas que usa cada uma. */
+  var REN_CAMPO = { 'GERENTES': 'gerente', 'TAMANHO APTO': 'tamanho', 'GARAGEM': 'garagem' };
   function opcoesRenomear() {
-    $('#ren-de').innerHTML = (S.listas['GERENTES'] || []).map(function (g) { return '<option value="' + esc(g) + '">' + esc(g) + '</option>'; }).join('');
+    $('#ren-de').innerHTML = (S.listas[$('#ren-lista').value] || []).map(function (g) { return '<option value="' + esc(g) + '">' + esc(g) + '</option>'; }).join('');
   }
 
   function carregarUsuarios() {
@@ -3489,21 +3494,27 @@
       gravarUsuario({ email: email, nome: $('#nu-nome').value.trim(), papel: $('#nu-papel').value, liberado: true }, 'Acesso liberado para ' + email + '.')
         .then(function (deuCerto) { bt.disabled = false; if (deuCerto) { $('#form-usuario').reset(); $('#nu-papel').value = 'DIGITADOR'; } });
     });
+    $('#ren-lista').addEventListener('change', opcoesRenomear);
     $('#form-renomear').addEventListener('submit', function (ev) {
       ev.preventDefault();
-      var de = $('#ren-de').value, para = $('#ren-para').value.trim();
+      var lista = $('#ren-lista').value, de = $('#ren-de').value, para = $('#ren-para').value.trim();
+      if (!de) { toast('Escolha a opção que vai mudar.', true); return; }
       if (!para) { toast('Informe o novo nome.', true); $('#ren-para').focus(); return; }
       var bt = $('#bt-renomear');
       bt.disabled = true;
-      srv('renomearOpcaoLista', 'GERENTES', de, para).then(function (r) {
-        S.listas = r.listas; S.fichas = r.fichas; toast(r.mensagem); $('#ren-para').value = '';
+      srv('renomearOpcaoLista', lista, de, para).then(function (r) {
+        S.listas = r.listas; S.fichas = r.fichas; if (r.financeiro) S.fin = r.financeiro;
+        toast(r.mensagem); $('#ren-para').value = '';
         /* Troca a opcao no formulario aberto, sem recarregar a pagina. */
-        var novo = para.replace(/\s+/g, ' ').toUpperCase(), cg = campo('gerente');
-        Array.prototype.forEach.call(document.querySelectorAll('input[name="f_gerente"]'), function (i) {
+        var novo = para.replace(/\s+/g, ' ').toUpperCase(), id = REN_CAMPO[lista], cg = campo(id);
+        Array.prototype.forEach.call(document.querySelectorAll('input[name="f_' + id + '"]'), function (i) {
           if (i.value !== de) return;
           var marcado = i.checked, lab = i.closest('label');
           lab.outerHTML = chipHtml(cg, novo);
-          if (marcado) { var n = document.querySelector('input[name="f_gerente"][value="' + novo.replace(/"/g, '') + '"]'); if (n) { n.checked = true; n.dataset.on = '1'; } }
+          if (marcado) { var n = document.querySelector('input[name="f_' + id + '"][value="' + novo.replace(/"/g, '') + '"]'); if (n) { n.checked = true; n.dataset.on = '1'; } }
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('select#f_' + id + ' option'), function (o) {
+          if (o.value === de) { o.value = novo; o.textContent = novo; }
         });
         opcoesRenomear(); atualizarTudo(); bt.disabled = false;
       }).catch(function (e) { toast(e.message, true); bt.disabled = false; });
