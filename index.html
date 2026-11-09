@@ -187,6 +187,24 @@
   .painel-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
   .painel-corpo { overflow-y: auto; padding: 16px 20px 40px; flex: 1; }
   .bloco { background: var(--branco); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+  .bloco.faltas.incompleta { box-shadow: inset 4px 0 0 var(--dev-t); }
+  .bloco.faltas.incompleta h3 { color: var(--dev-t); }
+  .bloco.faltas.completa { box-shadow: inset 4px 0 0 var(--apr-t); background: var(--apr-f); }
+  .bloco.faltas.completa h3 { color: var(--apr-t); }
+  .lista-faltas { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; }
+  .lista-faltas li { font-size: 14px; min-width: 0; padding-left: 14px; position: relative; }
+  .lista-faltas li::before { content: ""; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--dev-t); }
+  .lista-faltas .menor { display: block; font-size: 11.5px; color: var(--suave); }
+  @media (max-width: 560px) { .lista-faltas { grid-template-columns: minmax(0, 1fr); } }
+  #linhas tr.completa td:first-child { box-shadow: inset 4px 0 0 var(--apr-t); }
+  #linhas tr.incompleta td:first-child { box-shadow: inset 4px 0 0 var(--dev-t); }
+  #linhas tr.completa td { background: var(--apr-f); }
+  #linhas tr.incompleta td { background: var(--dev-f); }
+  #linhas tr.completa:hover td { background: #D6EFDD; }
+  #linhas tr.incompleta:hover td { background: #FADCD8; }
+  .marca-comp { display: block; font-size: 11.5px; font-weight: 600; margin-top: 2px; }
+  tr.completa .marca-comp { color: var(--apr-t); }
+  tr.incompleta .marca-comp { color: var(--dev-t); }
   .bloco h3 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--marca); }
   .pares { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; margin: 0; }
   .pares div { min-width: 0; }
@@ -1647,15 +1665,18 @@
     desenharFiltros();
     var lista = fichasFiltradas();
     var total = fichasReais().length;
+    var nComp = lista.filter(function (f) { return !faltasFicha(f).length; }).length;
     $('#sub-fichas').textContent = total
-      ? lista.length + ' de ' + total + ' fichas. Clique em uma linha para ver, retificar' + (S.usuario.aprovador ? ' ou validar.' : '.')
+      ? lista.length + ' de ' + total + ' fichas: ' + nComp + (nComp === 1 ? ' completa' : ' completas') + ' (verde) e ' + (lista.length - nComp) + ' com itens faltando (vermelho). Clique em uma linha para ver, retificar' + (S.usuario.aprovador ? ' ou validar.' : '.')
       : 'Nenhuma ficha digitada ainda.';
     $('#linhas').innerHTML = lista.map(function (f) {
+      var nf = faltasFicha(f).length;
       var interesse = [f.tamanho, f.andar, f.garagem].filter(Boolean).join(' · ');
       var corretor = f.corretor ? esc(f.corretor) + (f.corretor2 ? ' <span class="mais">+1</span>' : '') : '—';
       var pix = f.diaPix ? esc(f.diaPix) + '<span class="menor">' + esc(f.horaPix) + '</span>' : '<span class="menor">Sem PIX</span>';
-      return '<tr data-id="' + esc(f.id) + '" tabindex="0">' +
-        '<td class="id">' + esc(f.id) + (f.numFicha ? '<span class="menor">Ficha nº ' + esc(f.numFicha) + '</span>' : '') + '</td>' +
+      return '<tr data-id="' + esc(f.id) + '" tabindex="0" class="' + (nf ? 'incompleta' : 'completa') + '">' +
+        '<td class="id">' + esc(f.id) + (f.numFicha ? '<span class="menor">Ficha nº ' + esc(f.numFicha) + '</span>' : '') +
+          '<span class="marca-comp">' + (nf ? (nf === 1 ? 'Falta 1 item' : 'Faltam ' + nf + ' itens') : 'Completa') + '</span></td>' +
         '<td>' + esc(f.dia) + '<span class="menor">' + esc(f.hora) + '</span></td>' +
         '<td>' + esc(f.nome) + '<span class="menor">' + esc(f.cpf || f.cnpj) + '</span></td>' +
         '<td>' + corretor + '<span class="menor">' + esc(f.imobiliaria) + '</span></td>' +
@@ -1673,6 +1694,33 @@
     var pend = contar('PENDENTE');
     var conta = $('#conta-pend');
     conta.hidden = !pend; conta.textContent = pend;
+  }
+
+  /* ---------------- Ficha completa ou com pendencias ---------------- */
+  /* Itens que ainda faltam numa ficha (atendimentos nao entram). Fica de fora: ordem final (definida depois),
+     "Onde mora hoje" (perfil do cliente), dados do 2o corretor quando nao ha 2o corretor e endereco/contato do conjuge. */
+  var CONJ_ESSENCIAL = ['nomeC', 'cpfC', 'rgC', 'nascC', 'profissaoC', 'estadoCivilC'];
+  var SO_SIM = { assCliente: 'Assinatura do cliente na ficha', assCorretor: 'Assinatura do corretor na ficha' };
+  function faltasFicha(f) {
+    if (ehAtend(f)) return [];
+    var pj = f.tipo === PJ, casado = !pj && /^CASAD/.test(f.estadoCivil || '');
+    var temC = S.campos.some(function (c) { return c.grupo === GRUPO_2 && c.id !== 'vinculoC' && f[c.id]; });
+    var pessoaC = f.vinculoC === 'SÓCIO' ? 'Sócio' : 'Cônjuge';
+    var l = [];
+    S.campos.forEach(function (c) {
+      if (c.oculto || c.id === 'ordemFinal' || c.grupo === 'Onde mora hoje') return;
+      if ((c.so === 'PF' && pj) || (c.so === 'PJ' && !pj)) return;
+      if (c.segundo && !f.corretor2) return;
+      if (c.grupo === GRUPO_2) {
+        if (!(casado || temC) || CONJ_ESSENCIAL.indexOf(c.id) < 0) return;
+        if (!f[c.id]) l.push({ grupo: pessoaC, rotulo: c.rotulo });
+        return;
+      }
+      if (SO_SIM[c.id]) { if (f[c.id] !== 'SIM') l.push({ grupo: c.grupo, rotulo: SO_SIM[c.id] }); return; }
+      if (!f[c.id]) l.push({ grupo: c.grupo, rotulo: c.id === 'nome' && pj ? 'Razão social' : c.rotulo });
+    });
+    if (f.clienteConfirmou !== 'SIM') l.push({ grupo: 'Confirmação com o cliente', rotulo: 'Cliente confirmar os dados pelo WhatsApp' });
+    return l;
   }
 
   /* ---------------- Painel de detalhe ---------------- */
@@ -1751,6 +1799,14 @@
       (link ? '<a class="bt" href="' + esc(link) + '" target="_blank" rel="noopener">Enviar dados pelo WhatsApp</a>' : '<span class="menor">Sem celular na ficha para enviar pelo WhatsApp.</span>') +
       (confirmou ? '<button class="bt" data-acao="desfazer-confirmacao">Desfazer confirmação</button>' : '<button class="bt" data-acao="confirmar-cliente">Marcar: cliente confirmou</button>') +
       '</div><details class="ver-msg"><summary>Ver a mensagem que será enviada</summary><pre>' + esc(mensagemWhats(f)) + '</pre></details></div>';
+    if (!atd) {
+      var faltas = faltasFicha(f);
+      corpo += faltas.length
+        ? '<div class="bloco faltas incompleta"><h3>Falta completar (' + faltas.length + ')</h3><ul class="lista-faltas">' + faltas.map(function (x) {
+            return '<li><span class="menor">' + esc(x.grupo) + '</span>' + esc(x.rotulo) + '</li>'; }).join('') + '</ul>' +
+          (podeRetificar ? '<div class="painel-acoes" style="margin-top:10px"><button class="bt" data-acao="retificar">Completar agora</button></div>' : '') + '</div>'
+        : '<div class="bloco faltas completa"><h3>Ficha completa</h3><p class="reu-info" style="margin:0">Todos os dados, assinaturas, PIX e a confirmação do cliente estão registrados.</p></div>';
+    }
     corpo += blocoReunioes(f);
 
     agrupar().forEach(function (g) {
